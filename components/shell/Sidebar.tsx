@@ -15,6 +15,7 @@ import {
   BarChart3,
   Layers,
   Scale,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,14 @@ const navigationItems = [
     track: "Track C",
     trackBadge: "VLM & Double-Blind",
     description: "Multimodal grading, Arbitration & Reliability",
+  },
+  {
+    name: "Course Routine",
+    href: "/routine",
+    icon: CalendarDays,
+    track: "Operations",
+    trackBadge: "Conflict-Safe",
+    description: "Weekly instructor, room & cohort scheduling",
   },
 ];
 
