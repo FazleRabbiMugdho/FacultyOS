@@ -2,6 +2,14 @@ import { z } from "zod";
 import { withCache } from "./cache";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+function parseJsonResponse(content: string) {
+  const normalized = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+  return JSON.parse(normalized);
+}
+
 export interface GradeImageOptions<T> {
   imageUrl?: string;
   imageBase64?: string;
@@ -21,7 +29,7 @@ export async function gradeImage<T>({
   mimeType = "image/jpeg",
   prompt,
   schema,
-  modelName = "anthropic/claude-3.5-sonnet",
+  modelName = process.env.OPENROUTER_VISION_MODEL || "~anthropic/claude-sonnet-latest",
 }: GradeImageOptions<T>): Promise<T> {
   const cacheKeyInput = {
     prompt,
@@ -33,7 +41,8 @@ export async function gradeImage<T>({
 
     // Strategy A: OpenRouter Claude 3.5 Sonnet / GPT-4o
     if (openRouterKey && openRouterKey !== "mock-openrouter-key") {
-      try {
+      for (const candidateModel of [modelName, "openai/gpt-4o"]) {
+        try {
         const imageContent = imageUrl
           ? { type: "image_url", image_url: { url: imageUrl } }
           : {
@@ -50,13 +59,57 @@ export async function gradeImage<T>({
             "X-Title": "FacultyOS IAPEA",
           },
           body: JSON.stringify({
-            model: modelName,
-            response_format: { type: "json_object" },
+            model: candidateModel,
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "academic_grade",
+                strict: true,
+                schema: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["per_criterion", "total_score", "confidence", "region_confidences"],
+                  properties: {
+                    per_criterion: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: ["label", "awarded", "max_marks", "reason", "ecf_applied"],
+                        properties: {
+                          label: { type: "string" },
+                          awarded: { type: "number" },
+                          max_marks: { type: "number" },
+                          reason: { type: "string" },
+                          ecf_applied: { type: "boolean" },
+                        },
+                      },
+                    },
+                    total_score: { type: "number" },
+                    confidence: { type: "number", minimum: 0, maximum: 1 },
+                    region_confidences: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: ["region_label", "bbox_or_step", "confidence", "note"],
+                        properties: {
+                          region_label: { type: "string" },
+                          bbox_or_step: { type: "string" },
+                          confidence: { type: "number", minimum: 0, maximum: 1 },
+                          note: { type: "string" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
             messages: [
               {
                 role: "system",
                 content:
-                  "You are an academic examiner assistant. Evaluate the provided handwritten exam script strictly against the criteria. Return structured JSON matching the requested schema including total_score, per_criterion breakdown, and overall/region confidence metrics.",
+                  "You are an academic examiner assistant. Evaluate the provided handwritten exam script strictly against the criteria. Return only the structured JSON required by the supplied response schema.",
               },
               {
                 role: "user",
@@ -73,15 +126,16 @@ export async function gradeImage<T>({
           const json = await res.json();
           const content = json.choices[0]?.message?.content;
           if (content) {
-            const parsed = JSON.parse(content);
+            const parsed = parseJsonResponse(content);
             return schema.parse(parsed);
           }
+        } else {
+          const errorBody = await res.text();
+          console.warn(`[OpenRouter ${candidateModel} failed]: ${res.status} ${errorBody}`);
         }
-      } catch (openRouterErr) {
-        console.warn(
-          "[OpenRouter Vision Call Failed, attempting Gemini fallback]:",
-          openRouterErr
-        );
+        } catch (openRouterErr) {
+          console.warn(`[OpenRouter ${candidateModel} failed]:`, openRouterErr);
+        }
       }
     }
 
@@ -107,7 +161,7 @@ export async function gradeImage<T>({
 
       const result = await model.generateContent(parts);
       const rawText = result.response.text();
-      const parsed = JSON.parse(rawText);
+      const parsed = parseJsonResponse(rawText);
       return schema.parse(parsed);
     }
 
