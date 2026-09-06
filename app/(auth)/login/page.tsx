@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  GraduationCap,
   ArrowRight,
   ShieldCheck,
   Lock,
@@ -23,6 +22,7 @@ import {
   Sparkles,
   Key,
 } from "lucide-react";
+import { BrandLogo } from "@/components/shell/BrandLogo";
 
 /* ─── Data ─────────────────────────────────────────────────────── */
 const FEATURES = [
@@ -220,10 +220,7 @@ export default function LoginPage() {
 
             {/* Logo */}
             <div className="auth-stagger-1 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
-                <GraduationCap className="h-[18px] w-[18px] text-white" />
-              </div>
+              <BrandLogo className="h-9 w-9" />
               <div className="flex items-center gap-2.5">
                 <span className="text-[15px] font-semibold tracking-tight text-white">FacultyOS</span>
                 <span
@@ -338,10 +335,7 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden absolute top-6 left-6 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}>
-              <GraduationCap className="h-4 w-4 text-white" />
-            </div>
+            <BrandLogo className="h-8 w-8" />
             <span className="text-[14px] font-semibold text-zinc-900 dark:text-white tracking-tight">FacultyOS</span>
           </div>
 

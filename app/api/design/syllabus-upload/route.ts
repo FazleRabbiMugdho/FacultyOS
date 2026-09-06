@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { extractDocumentText } from "@/lib/ai";
 
 async function getSupabase() {
   try {
@@ -47,49 +47,14 @@ export async function POST(req: NextRequest) {
       console.warn("[Storage upload warning]:", storageErr);
     }
 
-    // 2. Extract text from file
-    let extractedText = "";
-
-    if (
-      file.type === "text/plain" ||
-      file.type === "text/markdown" ||
-      file.name.endsWith(".txt") ||
-      file.name.endsWith(".md")
-    ) {
-      extractedText = buffer.toString("utf-8");
-    } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-      // Use Gemini to extract full syllabus text from PDF buffer
-      const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-      if (geminiKey && geminiKey !== "mock-gemini-key") {
-        try {
-          const ai = new GoogleGenerativeAI(geminiKey);
-          const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const base64Data = buffer.toString("base64");
-
-          const result = await model.generateContent([
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType: "application/pdf",
-              },
-            },
-            {
-              text: "Extract and transcribe the complete textual content of this course syllabus document. Preserve headings, topic outlines, prerequisites, and learning objectives as clean structured text.",
-            },
-          ]);
-
-          extractedText = result.response.text();
-        } catch (aiErr: any) {
-          console.warn("[Gemini PDF extraction warning]:", aiErr?.message);
-          // Fallback: extract printable characters
-          extractedText = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ");
-        }
-      } else {
-        extractedText = buffer.toString("utf-8").replace(/[^\x20-\x7E\n\r\t]/g, " ");
-      }
-    } else {
-      extractedText = buffer.toString("utf-8");
-    }
+    // 2. Multimodal extraction from file (PDF, Image, Slides, Notes)
+    const extractedText = await extractDocumentText({
+      buffer,
+      mimeType: file.type,
+      fileName: file.name,
+      prompt:
+        "Extract and transcribe the complete textual content of this course syllabus/curriculum/slide document. Preserve headings, topic outlines, prerequisites, formulas, and learning objectives as clean structured text.",
+    });
 
     return NextResponse.json({
       success: true,

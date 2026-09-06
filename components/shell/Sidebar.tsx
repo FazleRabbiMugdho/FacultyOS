@@ -8,8 +8,6 @@ import {
   LayoutDashboard,
   Compass,
   FileQuestion,
-  GraduationCap,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   BarChart3,
@@ -20,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BrandLogo } from "@/components/shell/BrandLogo";
 
 const navigationItems = [
   {
@@ -104,10 +103,10 @@ export function Sidebar({
       <div className="flex h-16 items-center justify-between px-4 border-b border-border/60">
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 overflow-hidden"
+          className="group flex items-center gap-3 overflow-hidden press"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
-            <GraduationCap className="h-5 w-5" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+            <BrandLogo className="h-10 w-10" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
@@ -171,7 +170,7 @@ export function Sidebar({
           {!collapsed ? "Academic Lifecycle" : "•••"}
         </div>
 
-        {visibleItems.map((item) => {
+        {visibleItems.map((item, i) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -180,17 +179,22 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              style={{ animationDelay: `${0.05 + i * 0.06}s` }}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                "reveal-sm press group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
               )}
             >
+              {/* Animated active indicator bar */}
+              {isActive && !collapsed && (
+                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-foreground/90 reveal-scale" />
+              )}
               <item.icon
                 className={cn(
-                  "h-5 w-5 shrink-0 transition-transform group-hover:scale-105",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground"
+                  "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                  isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"
                 )}
               />
 
@@ -199,18 +203,6 @@ export function Sidebar({
                   <div className="flex flex-col truncate">
                     <span className="truncate">{item.name}</span>
                   </div>
-                  {item.trackBadge && (
-                    <span
-                      className={cn(
-                        "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {item.track}
-                    </span>
-                  )}
                 </div>
               )}
             </Link>
@@ -224,7 +216,9 @@ export function Sidebar({
           <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-1.5 backdrop-blur-sm">
             <div className="flex items-center justify-between text-xs font-medium">
               <span className="flex items-center gap-1.5 text-foreground">
-                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                <span className="status-ping inline-flex h-1.5 w-1.5 rounded-full text-emerald-500">
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
                 AI Gateway
               </span>
               <Badge variant="success" className="text-[10px] px-1.5 py-0">

@@ -137,9 +137,10 @@ export type UpdateCoPoCellInput = z.infer<typeof UpdateCoPoCellSchema>;
 export const IngestDocumentSchema = z.object({
   course_id: z.string().uuid("Invalid course ID format"),
   type: z.enum(["syllabus", "slides", "past_paper"]),
-  content: z.string().min(10, "Document content must be provided"),
+  content: z.string().min(5, "Document content must be provided"),
   name: z.string().optional(),
-  planned_at: z.string().optional(),
+  storage_path: z.string().optional().nullable(),
+  planned_at: z.string().optional().nullable(),
   taught_at: z.string().optional().nullable(),
 });
 
