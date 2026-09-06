@@ -129,3 +129,51 @@ export const UpdateCoPoCellSchema = z.object({
 });
 
 export type UpdateCoPoCellInput = z.infer<typeof UpdateCoPoCellSchema>;
+
+// ==========================================
+// Prompt A3: RAG Ingestion & Exam Blueprint Schemas
+// ==========================================
+
+export const IngestDocumentSchema = z.object({
+  course_id: z.string().uuid("Invalid course ID format"),
+  type: z.enum(["syllabus", "slides", "past_paper"]),
+  content: z.string().min(10, "Document content must be provided"),
+  name: z.string().optional(),
+  planned_at: z.string().optional(),
+  taught_at: z.string().optional().nullable(),
+});
+
+export type IngestDocumentInput = z.infer<typeof IngestDocumentSchema>;
+
+export const GenerateBlueprintSchema = z.object({
+  course_id: z.string().uuid("Invalid course ID format"),
+  name: z.string().optional().default("Final Comprehensive Exam Blueprint"),
+  mode: z.enum(["planned", "drift_aware"]).default("drift_aware"),
+});
+
+export type GenerateBlueprintInput = z.infer<typeof GenerateBlueprintSchema>;
+
+export const SingleBlueprintTopicSchema = z.object({
+  module: z.string().describe("Module identifier e.g., 'Module 1: Asymptotic Analysis'"),
+  topic: z.string().describe("Topic title e.g., 'Amortized Analysis & Potential Method'"),
+  planned_weight: z.number().describe("Planned weight percentage (0-100) based on syllabus schedule"),
+  actual_weight: z.number().describe("Actual taught instructional volume weight percentage (0-100) based on delivered chunks & delivery timestamps"),
+  drift: z.number().describe("Drift metric: actual_weight - planned_weight. Negative indicates rushed or skipped topic."),
+  drift_explanation: z.string().describe("Concise reason explaining the drift calculation (e.g. 'Rushed topic with minimal slide depth' or 'Standard coverage')"),
+  weight_percent: z.number().describe("Final allocated exam weight percentage (must sum to 100 across all topics in the blueprint)"),
+});
+
+export const AIGeneratedBlueprintSchema = z.object({
+  name: z.string().describe("Blueprint name"),
+  topics: z.array(SingleBlueprintTopicSchema).min(3).max(10),
+  reasoning_summary: z.string().describe("Summary of the instructional volume analysis and cognitive balance rationale"),
+});
+
+export type AIGeneratedBlueprintResult = z.infer<typeof AIGeneratedBlueprintSchema>;
+
+export const UpdateTopicWeightSchema = z.object({
+  topic_id: z.string().uuid("Invalid topic ID"),
+  weight_percent: z.number().min(0).max(100),
+});
+
+export type UpdateTopicWeightInput = z.infer<typeof UpdateTopicWeightSchema>;

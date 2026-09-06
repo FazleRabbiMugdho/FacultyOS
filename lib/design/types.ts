@@ -134,4 +134,33 @@ export interface DocumentRecord {
   planned_at?: string | null;
   taught_at?: string | null;
   created_at: string;
+  chunk_count?: number;
+}
+
+export interface Blueprint {
+  id: string;
+  course_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface BlueprintTopic {
+  id: string;
+  blueprint_id: string;
+  module: string;
+  topic: string;
+  weight_percent: number;
+  planned_weight?: number | null;
+  actual_weight?: number | null;
+  drift?: number | null;
+  drift_explanation?: string | null;
+  created_at?: string;
+}
+
+export interface BlueprintWithTopics extends Blueprint {
+  topics: BlueprintTopic[];
+  total_weight: number;
+  mode: "planned" | "drift_aware";
+  ingested_documents?: DocumentRecord[];
+  total_chunks?: number;
 }

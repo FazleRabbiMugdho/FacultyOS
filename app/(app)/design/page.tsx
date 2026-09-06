@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { OutcomesTab } from "@/components/design/OutcomesTab";
 import { CoPoMatrix } from "@/components/design/CoPoMatrix";
+import { BlueprintTab } from "@/components/design/BlueprintTab";
 import { NewCourseDialog } from "@/components/design/NewCourseDialog";
 import { type Course } from "@/lib/design/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -244,14 +245,9 @@ export default function DesignPage() {
               <CoPoMatrix course={selectedCourse} />
             </TabsContent>
 
-            {/* Tab 3: Blueprint & Drift Tab (Prompt A3 Standby) */}
+            {/* Tab 3: Blueprint & Drift Tab (Prompt A3 Feature) */}
             <TabsContent value="blueprint" className="space-y-6 focus-visible:outline-none">
-              <EmptyState
-                icon={<TrendingUp className="h-7 w-7 text-primary" />}
-                title="Drift-Aware Exam Blueprint Workspace (Feature A3)"
-                description={`Ingest lecture slides/notes via RAG and synthesize exam weight distributions reweighted by what was actually taught vs planned.`}
-                actionLabel="Ready for Feature A3"
-              />
+              <BlueprintTab course={selectedCourse} />
             </TabsContent>
           </Tabs>
         </div>
