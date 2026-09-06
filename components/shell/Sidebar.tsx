@@ -15,6 +15,7 @@ import {
   Scale,
   CalendarDays,
   Building2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
