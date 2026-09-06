@@ -22,8 +22,11 @@ import {
   EyeOff,
   CheckCircle2,
   Layers,
-  Sparkle,
   Zap,
+  Cpu,
+  Fingerprint,
+  ChevronRight,
+  Award,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,18 +96,18 @@ export default function LoginPage() {
       {/* ========================================================================= */}
       {/* LEFT COLUMN: Deep Visual Showcase & Academic Platform Branding (7 cols)    */}
       {/* ========================================================================= */}
-      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-10 xl:p-14 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 overflow-hidden border-r border-border/40">
-        {/* Ambient background glows */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/25 rounded-full blur-[110px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-500/20 rounded-full blur-[110px] pointer-events-none" />
+      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-8 xl:p-12 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 overflow-hidden border-r border-border/40 min-h-screen">
+        {/* Dynamic ambient background glows */}
+        <div className="absolute -top-28 -left-28 w-96 h-96 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-28 -right-28 w-96 h-96 bg-indigo-500/15 rounded-full blur-[100px] pointer-events-none" />
         
-        {/* Subtle grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_80%,transparent_100%)] opacity-30 pointer-events-none" />
+        {/* Geometric circuit grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_40%,#000_75%,transparent_100%)] opacity-35 pointer-events-none" />
 
-        {/* Top Branding Header */}
-        <div className="relative z-10 space-y-2">
+        {/* Top Header Section */}
+        <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-indigo-600 text-white shadow-lg shadow-primary/30 ring-1 ring-white/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-blue-600 text-white shadow-lg shadow-primary/30 ring-1 ring-white/20">
               <GraduationCap className="h-6 w-6" />
             </div>
             <div>
@@ -121,14 +124,22 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-medium backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>OBE & RLS Engine Active</span>
+          </div>
         </div>
 
-        {/* Center Hero & 3-Track Feature Pillars */}
-        <div className="relative z-10 my-auto py-8 space-y-7">
-          <div className="space-y-3">
+        {/* Center Showcase: Hero & Connected Track Pipeline */}
+        <div className="relative z-10 my-auto py-6 space-y-6">
+          <div className="space-y-2.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs font-medium text-slate-300">
               <Sparkles className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
-              <span>Higher-Education Academic Co-Pilot</span>
+              <span>Higher-Education Faculty Co-Pilot</span>
             </div>
             <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight font-heading">
               Design the Course. <br />
@@ -137,74 +148,89 @@ export default function LoginPage() {
                 Grade with Surgical Fairness.
               </span>
             </h1>
-            <p className="text-sm text-slate-300/90 leading-relaxed max-w-xl">
-              End-to-end university workflow engine aligning Outcome-Based Education (OBE) with vector deduplication and multimodal double-blind arbitration.
+            <p className="text-xs xl:text-sm text-slate-300/90 leading-relaxed max-w-xl">
+              The unified university operating system connecting Outcome-Based Education (OBE) curriculum design, collision-proof question authoring, and multimodal double-blind arbitration.
             </p>
           </div>
 
-          {/* 3 Core Track Highlights */}
-          <div className="grid grid-cols-1 gap-3.5 max-w-xl">
-            {/* Track A Pillar */}
-            <div className="group p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all duration-200 backdrop-blur-sm">
+          {/* Connected 3-Stage Academic Pipeline Cards */}
+          <div className="space-y-2.5 max-w-xl">
+            {/* Track A Pillar Card */}
+            <div className="p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 transition-all duration-200 backdrop-blur-sm shadow-xs">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 mt-0.5">
                   <BookOpenCheck className="h-4 w-4" />
                 </div>
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-slate-200">
-                      Track A: Course Design & Outcome-Drift
+                      Track A: Course Design & Outcome Drift
                     </span>
-                    <span className="text-[10px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full border border-blue-400/20">
-                      Bloom L1–L6
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded-md border border-blue-500/30">
+                        Bloom L1–L6
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded-md">
+                        Sparsity CO-PO
+                      </span>
+                    </div>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    Syllabus RAG ingestion, OBE outcome generation, sparsity-enforced CO-PO matrix, and taught vs planned drift analysis.
+                    Syllabus RAG ingestion, Bloom's cognitive mapping, sparsity-enforced correlation matrix, and taught vs planned topic drift analysis.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Track B Pillar */}
-            <div className="group p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all duration-200 backdrop-blur-sm">
+            {/* Track B Pillar Card */}
+            <div className="p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 transition-all duration-200 backdrop-blur-sm shadow-xs">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0 mt-0.5">
                   <ShieldAlert className="h-4 w-4" />
                 </div>
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-slate-200">
                       Track B: Question Dedup & ECF Rubrics
                     </span>
-                    <span className="text-[10px] font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                      3-Layer Dedup
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
+                        3-Layer Dedup
+                      </span>
+                      <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30">
+                        ECF Safeguard
+                      </span>
+                    </div>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    pgvector cosine + Jaccard + ⭐ Skill-Signature <em>"same skill, different disguise"</em> detector with Error-Carried-Forward (ECF) rubrics.
+                    pgvector cosine + Jaccard + ⭐ Skill-Signature <em>"same skill, different disguise"</em> detector with Error-Carried-Forward (ECF) non-penalty rubrics.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Track C Pillar */}
-            <div className="group p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all duration-200 backdrop-blur-sm">
+            {/* Track C Pillar Card */}
+            <div className="p-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 transition-all duration-200 backdrop-blur-sm shadow-xs">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 mt-0.5">
                   <Scale className="h-4 w-4" />
                 </div>
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-slate-200">
                       Track C: Multimodal Grading & Arbitration
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">
-                      Cohen's κ Calibration
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                        &lt;0.85 HITL
+                      </span>
+                      <span className="text-[10px] font-mono text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-md border border-purple-500/30">
+                        Cohen's κ
+                      </span>
+                    </div>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    Image-native VLM script grading, surgical confidence-per-region (&lt;0.85 HITL), double-blind Δ discrepancy routing, and bias calibration.
+                    Image-native VLM script grading, confidence-per-region surgical review, double-blind Δ discrepancy routing, and bias calibration.
                   </p>
                 </div>
               </div>
@@ -213,27 +239,27 @@ export default function LoginPage() {
         </div>
 
         {/* Footer Metrics & Institutional Trust */}
-        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-          <div className="flex items-center gap-6 font-mono text-[11px]">
+        <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-5 font-mono text-[11px]">
             <div>
               <span className="font-bold text-white block text-sm">99.4%</span>
-              <span className="text-slate-500">Grading Reliability</span>
+              <span className="text-slate-500 text-[10px]">Grading Reliability</span>
             </div>
             <div className="h-6 w-px bg-white/10" />
             <div>
               <span className="font-bold text-white block text-sm">768-dim</span>
-              <span className="text-slate-500">Vector Embeddings</span>
+              <span className="text-slate-500 text-[10px]">Vector Embeddings</span>
             </div>
             <div className="h-6 w-px bg-white/10" />
             <div>
               <span className="font-bold text-white block text-sm">100% Blind</span>
-              <span className="text-slate-500">FERPA Anonymization</span>
+              <span className="text-slate-500 text-[10px]">FERPA Anonymized</span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>RLS Active</span>
+            <span>Institutional Grade</span>
           </div>
         </div>
       </div>
@@ -241,13 +267,13 @@ export default function LoginPage() {
       {/* ========================================================================= */}
       {/* RIGHT COLUMN: Precision-Glass Authentication Form & Role Sandbox (5 cols) */}
       {/* ========================================================================= */}
-      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 relative overflow-hidden">
-        {/* Subtle mobile header */}
-        <div className="lg:hidden mb-8 text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 mb-1">
-            <GraduationCap className="h-6 w-6" />
+      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-10 relative overflow-y-auto min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        {/* Mobile Header */}
+        <div className="lg:hidden mb-6 text-center space-y-1.5">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg mb-1">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          <h2 className="text-xl font-bold tracking-tight text-foreground font-heading">
             FacultyOS <span className="text-xs font-normal text-primary border border-primary/30 rounded-full px-2 py-0.5 ml-1 font-mono">IAPEA</span>
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -255,22 +281,23 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="w-full max-w-md space-y-6 animate-fade-in">
-          {/* Header Title inside card container */}
-          <div className="space-y-1.5">
-            <Badge variant="glass" className="text-xs font-mono mb-1 text-primary gap-1 py-0.5">
+        {/* Elevated Glass Container Card */}
+        <div className="w-full max-w-md p-6 sm:p-7 rounded-2xl border border-border/80 bg-card/85 dark:bg-slate-900/85 shadow-2xl backdrop-blur-xl ring-1 ring-border/50 space-y-5 animate-fade-in">
+          {/* Card Header Title */}
+          <div className="space-y-1">
+            <Badge variant="glass" className="text-[11px] font-mono mb-1 text-primary gap-1 py-0.5">
               <Lock className="h-3 w-3" /> Institutional Portal
             </Badge>
             <h2 className="text-2xl font-bold tracking-tight text-foreground font-heading">
               Faculty Sign In
             </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Enter your university credentials or select a pre-configured role to simulate double-blind academic evaluation.
+              Enter your university credentials or choose a pre-configured role simulation.
             </p>
           </div>
 
-          {/* Quick Demo Sandbox Roles */}
-          <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 space-y-2.5">
+          {/* Quick Demo Role Switcher Panel */}
+          <div className="p-3 rounded-xl bg-muted/40 border border-border/70 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Zap className="h-3.5 w-3.5 text-amber-500" />
@@ -292,14 +319,14 @@ export default function LoginPage() {
                     : "bg-background hover:bg-muted/70 border-border/60"
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
+                <div className="flex items-center justify-between w-full mb-0.5">
                   <span className="font-bold text-[11px] text-foreground">Junior</span>
                   <Badge variant="outline" className="text-[9px] px-1 py-0 text-blue-500 border-blue-500/30">
                     E1
                   </Badge>
                 </div>
                 <span className="text-[10px] text-muted-foreground line-clamp-1">
-                  First Examiner
+                  Examiner
                 </span>
               </button>
 
@@ -313,7 +340,7 @@ export default function LoginPage() {
                     : "bg-background hover:bg-muted/70 border-border/60"
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
+                <div className="flex items-center justify-between w-full mb-0.5">
                   <span className="font-bold text-[11px] text-foreground">Senior</span>
                   <Badge variant="outline" className="text-[9px] px-1 py-0 text-amber-500 border-amber-500/30">
                     E2/E3
@@ -334,7 +361,7 @@ export default function LoginPage() {
                     : "bg-background hover:bg-muted/70 border-border/60"
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
+                <div className="flex items-center justify-between w-full mb-0.5">
                   <span className="font-bold text-[11px] text-foreground">Dean</span>
                   <Badge variant="outline" className="text-[9px] px-1 py-0 text-purple-500 border-purple-500/30">
                     Admin
@@ -348,8 +375,8 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
+          <form onSubmit={handleLogin} className="space-y-3.5">
+            <div className="space-y-1">
               <Label htmlFor="email" className="text-xs font-semibold">
                 Institutional Email
               </Label>
@@ -370,7 +397,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-xs font-semibold">
                   Password
@@ -403,7 +430,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-10 gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
+              className="w-full h-10 gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 mt-1"
             >
               {loading ? (
                 <>
@@ -426,8 +453,8 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Security & Protocol Notice */}
-          <div className="pt-4 border-t border-border/60 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+          {/* Security Notice */}
+          <div className="pt-3 border-t border-border/60 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
             <span>FERPA & Double-Blind Protocol Protected</span>
           </div>
