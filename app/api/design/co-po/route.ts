@@ -7,6 +7,7 @@ import {
   AIGeneratedCoPoSchema,
   UpdateCoPoCellSchema,
 } from "@/lib/design/schemas";
+import { fallbackCoPoMappings } from "@/lib/design/fallbacks";
 
 async function getSupabase() {
   try {
@@ -202,11 +203,19 @@ ${cosFormatted}
 Institutional Program Outcomes (POs):
 ${posFormatted}`;
 
-    const aiResult = await generateJSON(
-      prompt,
-      AIGeneratedCoPoSchema,
-      "gemini-1.5-pro"
-    );
+    let source: "ai" | "fallback" = "ai";
+    let aiResult;
+    try {
+      aiResult = await generateJSON(
+        prompt,
+        AIGeneratedCoPoSchema,
+        "gemini-1.5-pro"
+      );
+    } catch (aiError) {
+      console.warn("[Track A CO-PO] Gemini unavailable; using sparse deterministic fallback:", aiError);
+      aiResult = AIGeneratedCoPoSchema.parse(fallbackCoPoMappings(cos, pos));
+      source = "fallback";
+    }
 
     // Map co_code and po_code to UUIDs
     const coCodeMap = new Map(cos.map((c) => [c.code.toUpperCase(), c.id]));
@@ -263,6 +272,7 @@ ${posFormatted}`;
       total_cells: totalCells,
       sparsity_percent: sparsityPercent,
       confidence: 0.96,
+      source,
     });
   } catch (err: any) {
     console.error("[POST /api/design/co-po error]:", err);

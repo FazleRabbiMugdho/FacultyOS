@@ -7,6 +7,7 @@ import {
   AIGeneratedOutcomesSchema,
   CreateOutcomeManualSchema,
 } from "@/lib/design/schemas";
+import { fallbackOutcomes } from "@/lib/design/fallbacks";
 
 async function getSupabase() {
   try {
@@ -121,11 +122,19 @@ ${syllabus_text}
 \"\"\"`;
 
     // Call Gemini 1.5 Pro with Zod Schema validation
-    const aiResult = await generateJSON(
-      prompt,
-      AIGeneratedOutcomesSchema,
-      "gemini-1.5-pro"
-    );
+    let source: "ai" | "fallback" = "ai";
+    let aiResult;
+    try {
+      aiResult = await generateJSON(
+        prompt,
+        AIGeneratedOutcomesSchema,
+        "gemini-1.5-pro"
+      );
+    } catch (aiError) {
+      console.warn("[Track A outcomes] Gemini unavailable; using deterministic fallback:", aiError);
+      aiResult = AIGeneratedOutcomesSchema.parse(fallbackOutcomes(syllabus_text));
+      source = "fallback";
+    }
 
     const supabase = await getSupabase();
 
@@ -163,7 +172,8 @@ ${syllabus_text}
       {
         outcomes: insertedOutcomes,
         count: insertedOutcomes.length,
-        confidence: 0.94,
+        confidence: source === "ai" ? 0.94 : 0.82,
+        source,
       },
       { status: 201 }
     );

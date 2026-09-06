@@ -6,6 +6,7 @@ import {
   GenerateBlueprintSchema,
   AIGeneratedBlueprintSchema,
 } from "@/lib/design/schemas";
+import { fallbackBlueprint } from "@/lib/design/fallbacks";
 
 async function getSupabase() {
   try {
@@ -167,11 +168,19 @@ ${cosContext}
 Delivered Lecture Material & Delivery Timestamps (RAG Context):
 ${documentsContext}`;
 
-    const aiResult = await generateJSON(
-      prompt,
-      AIGeneratedBlueprintSchema,
-      "gemini-1.5-pro"
-    );
+    let source: "ai" | "fallback" = "ai";
+    let aiResult;
+    try {
+      aiResult = await generateJSON(
+        prompt,
+        AIGeneratedBlueprintSchema,
+        "gemini-1.5-pro"
+      );
+    } catch (aiError) {
+      console.warn("[Track A blueprint] Gemini unavailable; using deterministic fallback:", aiError);
+      aiResult = AIGeneratedBlueprintSchema.parse(fallbackBlueprint(mode));
+      source = "fallback";
+    }
 
     // Normalize weights to sum exactly to 100
     const rawSum = aiResult.topics.reduce((acc, t) => acc + (t.weight_percent || 0), 0);
@@ -246,6 +255,7 @@ ${documentsContext}`;
         mode,
         reasoning_summary: aiResult.reasoning_summary,
         confidence: 0.95,
+        source,
       },
       { status: 201 }
     );
