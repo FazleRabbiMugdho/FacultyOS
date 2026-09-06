@@ -143,7 +143,25 @@ export function LicensingWorkspace() {
       setFormName("");
       setFormDomain("");
       setFormContact("");
-      loadInstitutions();
+
+      // Optimistically update local state immediately so user sees new entry instantly
+      if (data.institution) {
+        setInstitutions((prev) => {
+          const exists = prev.some(
+            (i) => i.id === data.institution.id || i.slug === data.institution.slug
+          );
+          if (exists) {
+            return prev.map((i) =>
+              i.id === data.institution.id || i.slug === data.institution.slug
+                ? data.institution
+                : i
+            );
+          }
+          return [data.institution, ...prev];
+        });
+      }
+
+      await loadInstitutions();
     } catch (err: any) {
       toast.error(err.message || "An error occurred");
     } finally {
@@ -483,7 +501,7 @@ export function LicensingWorkspace() {
 
                   {/* Domain Badges */}
                   <td className="py-3.5 px-4">
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {inst.domains.map((dom) => (
                         <span
                           key={dom}
@@ -492,6 +510,22 @@ export function LicensingWorkspace() {
                           <Globe className="w-3 h-3 text-indigo-400" />@{dom}
                         </span>
                       ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormName(inst.name);
+                          setFormDomain("");
+                          setFormTier(inst.tier);
+                          setFormSeats(String(inst.max_seats));
+                          setFormContact(inst.billing_contact || "");
+                          setFormAcv(String(inst.annual_contract_value || 24000));
+                          setModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-dashed border-border/80 text-[10px] text-muted-foreground hover:text-indigo-400 hover:border-indigo-500/50 transition-colors"
+                        title={`Add domain to ${inst.name}`}
+                      >
+                        <Plus className="w-2.5 h-2.5" /> Domain
+                      </button>
                     </div>
                   </td>
 

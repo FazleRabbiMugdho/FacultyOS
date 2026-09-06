@@ -1,12 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Institution,
   DomainVerificationResult,
   CreateInstitutionInput,
 } from "./types";
 
+// Helper: Safely get Supabase admin client (bypasses RLS) with server client fallback
+function getSupabaseClient() {
+  try {
+    return createAdminClient();
+  } catch {
+    return createClient();
+  }
+}
+
 // Resilient in-memory fallback store initialized with AUST, MIT, Stanford
-// Ensures immediate functionality during demos and local testing
 const DEMO_INSTITUTIONS: Institution[] = [
   {
     id: "inst-aust-001",
@@ -73,13 +82,14 @@ export function normalizeDomain(input: string): string {
  */
 export async function getInstitutions(): Promise<Institution[]> {
   try {
-    const supabase = createClient();
+    const supabase = getSupabaseClient();
     const { data: dbInsts, error: instError } = await supabase
       .from("institutions")
-      .select("*, institution_domains(domain, is_active)");
+      .select("*, institution_domains(domain, is_active)")
+      .order("created_at", { ascending: false });
 
     if (!instError && dbInsts && dbInsts.length > 0) {
-      return dbInsts.map((item: any) => ({
+      const mapped: Institution[] = dbInsts.map((item: any) => ({
         id: item.id,
         name: item.name,
         slug: item.slug,
@@ -96,9 +106,21 @@ export async function getInstitutions(): Promise<Institution[]> {
           .map((d: any) => d.domain),
         created_at: item.created_at,
       }));
+
+      // Merge with memoryInstitutions deduplicating by both ID and slug
+      const existingKeys = new Set([
+        ...mapped.map((m) => m.id),
+        ...mapped.map((m) => m.slug.toLowerCase()),
+      ]);
+      const additionalMem = memoryInstitutions.filter(
+        (m) => !existingKeys.has(m.id) && !existingKeys.has(m.slug.toLowerCase())
+      );
+      const combined = [...mapped, ...additionalMem];
+      memoryInstitutions = combined;
+      return combined;
     }
-  } catch {
-    // Fall back to memory store on connection or schema error
+  } catch (err) {
+    console.error("[Licensing] getInstitutions error:", err);
   }
 
   return memoryInstitutions;
@@ -122,7 +144,7 @@ export async function verifyEmailDomain(
 
   // Check Supabase first if available
   try {
-    const supabase = createClient();
+    const supabase = getSupabaseClient();
     const { data: domainRecord, error: domainError } = await supabase
       .from("institution_domains")
       .select("*, institutions(*)")
@@ -160,26 +182,26 @@ export async function verifyEmailDomain(
           tier: inst.tier,
           status: inst.status,
           active_from: inst.active_from,
-          seats_remaining: maxSeats - enrolled,
+          seats_remaining: Math.max(0, maxSeats - enrolled),
           max_seats: maxSeats,
           enrolled_seats: enrolled,
         },
       };
     }
   } catch {
-    // Supabase unavailable, check in-memory catalog
+    // Fall back to memory check
   }
 
-  // In-memory catalog lookup
+  // In-memory verification fallback
   const matched = memoryInstitutions.find((inst) =>
-    inst.domains.some((d) => d.toLowerCase() === domain)
+    inst.domains.map((d) => d.toLowerCase()).includes(domain)
   );
 
   if (!matched) {
     return {
       allowed: false,
       domain,
-      reason: `Institutional domain @${domain} is not currently licensed. FacultyOS requires an active institutional partnership.`,
+      reason: `Institutional domain @${domain} is not currently licensed. Contact your academic IT department or platform sales.`,
     };
   }
 
@@ -187,7 +209,7 @@ export async function verifyEmailDomain(
     return {
       allowed: false,
       domain,
-      reason: `License for ${matched.name} is currently ${matched.status}.`,
+      reason: `The license for ${matched.name} is currently ${matched.status}. Please contact support.`,
     };
   }
 
@@ -196,7 +218,7 @@ export async function verifyEmailDomain(
     return {
       allowed: false,
       domain,
-      reason: `Institutional license seat limit reached (${matched.max_seats} allocated seats).`,
+      reason: `The license for ${matched.name} has reached its capacity (${matched.max_seats} seats).`,
     };
   }
 
@@ -218,13 +240,13 @@ export async function verifyEmailDomain(
 }
 
 /**
- * Onboard a new institution with authorized domain (Provider End)
+ * Onboard a new institution or add a domain to an existing institution (Provider End)
  */
 export async function createInstitution(
   input: CreateInstitutionInput
 ): Promise<Institution> {
   const cleanDomain = normalizeDomain(input.domain);
-  const slug =
+  const baseSlug =
     input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -235,73 +257,176 @@ export async function createInstitution(
     input.license_end ||
     new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Try saving to Supabase if available
+  let createdInst: Institution | null = null;
+
   try {
-    const supabase = createClient();
-    const { data: newInst, error: instError } = await supabase
+    const supabase = getSupabaseClient();
+
+    // 1. Check if institution already exists by slug or name
+    const { data: existingInst } = await supabase
       .from("institutions")
-      .insert({
-        name: input.name,
-        slug,
+      .select("*, institution_domains(domain, is_active)")
+      .or(`slug.eq.${baseSlug},name.ilike.${input.name.trim()}`)
+      .maybeSingle();
+
+    let instId = "";
+    let instRecord: any = null;
+
+    if (existingInst) {
+      // Update existing institution terms
+      const { data: updated, error: updError } = await supabase
+        .from("institutions")
+        .update({
+          tier: input.tier || existingInst.tier || "standard",
+          status: "active",
+          max_seats: input.max_seats || existingInst.max_seats || 50,
+          billing_contact: input.billing_contact || existingInst.billing_contact,
+          annual_contract_value:
+            input.annual_contract_value || existingInst.annual_contract_value,
+        })
+        .eq("id", existingInst.id)
+        .select()
+        .single();
+
+      if (updError) {
+        console.error("[Licensing] Error updating institution:", updError);
+      }
+      instRecord = updated || existingInst;
+      instId = instRecord.id;
+    } else {
+      // Create new institution with unique slug
+      let uniqueSlug = baseSlug;
+      const { data: slugCheck } = await supabase
+        .from("institutions")
+        .select("id")
+        .eq("slug", uniqueSlug)
+        .maybeSingle();
+
+      if (slugCheck) {
+        uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
+      }
+
+      const { data: inserted, error: insError } = await supabase
+        .from("institutions")
+        .insert({
+          name: input.name.trim(),
+          slug: uniqueSlug,
+          tier: input.tier || "standard",
+          status: "active",
+          max_seats: input.max_seats || 50,
+          active_from: activeFrom,
+          license_end: licenseEnd,
+          billing_contact: input.billing_contact || null,
+          annual_contract_value: input.annual_contract_value || 24000,
+        })
+        .select()
+        .single();
+
+      if (insError) {
+        console.error("[Licensing] Error inserting institution:", insError);
+        throw new Error(insError.message);
+      }
+      instRecord = inserted;
+      instId = instRecord.id;
+    }
+
+    // 2. Add or activate the domain in institution_domains
+    if (instId && cleanDomain) {
+      const { error: domErr } = await supabase
+        .from("institution_domains")
+        .upsert(
+          {
+            institution_id: instId,
+            domain: cleanDomain,
+            is_active: true,
+          },
+          { onConflict: "domain" }
+        );
+
+      if (domErr) {
+        console.error("[Licensing] Error upserting domain:", domErr);
+      }
+    }
+
+    // 3. Query all active domains for this institution to construct complete record
+    const { data: domainsData } = await supabase
+      .from("institution_domains")
+      .select("domain")
+      .eq("institution_id", instId)
+      .eq("is_active", true);
+
+    const activeDomains = (domainsData || []).map((d: any) => d.domain);
+    if (cleanDomain && !activeDomains.includes(cleanDomain)) {
+      activeDomains.push(cleanDomain);
+    }
+
+    createdInst = {
+      id: instRecord.id,
+      name: instRecord.name,
+      slug: instRecord.slug,
+      tier: instRecord.tier,
+      status: instRecord.status,
+      max_seats: instRecord.max_seats,
+      enrolled_seats: instRecord.enrolled_seats || 0,
+      active_from: instRecord.active_from,
+      license_end: instRecord.license_end,
+      billing_contact: instRecord.billing_contact || "",
+      annual_contract_value: instRecord.annual_contract_value || 0,
+      domains: activeDomains,
+      created_at: instRecord.created_at,
+    };
+  } catch (dbErr: any) {
+    console.error("[Licensing] Database write error, using fallback:", dbErr);
+  }
+
+  // If DB write failed or offline, construct local institution
+  if (!createdInst) {
+    const existingMem = memoryInstitutions.find(
+      (m) =>
+        m.slug === baseSlug ||
+        m.name.toLowerCase() === input.name.trim().toLowerCase()
+    );
+
+    if (existingMem) {
+      const updatedDomains = cleanDomain
+        ? Array.from(new Set([...existingMem.domains, cleanDomain]))
+        : existingMem.domains;
+      createdInst = {
+        ...existingMem,
+        domains: updatedDomains,
+        max_seats: input.max_seats || existingMem.max_seats,
+        tier: input.tier || existingMem.tier,
+      };
+    } else {
+      createdInst = {
+        id: `inst-${Date.now()}`,
+        name: input.name.trim(),
+        slug: baseSlug,
         tier: input.tier || "standard",
         status: "active",
         max_seats: input.max_seats || 50,
+        enrolled_seats: 0,
         active_from: activeFrom,
         license_end: licenseEnd,
-        billing_contact: input.billing_contact || null,
+        billing_contact: input.billing_contact || "",
         annual_contract_value: input.annual_contract_value || 24000,
-      })
-      .select()
-      .single();
-
-    if (!instError && newInst) {
-      if (cleanDomain) {
-        await supabase.from("institution_domains").insert({
-          institution_id: newInst.id,
-          domain: cleanDomain,
-          is_active: true,
-        });
-      }
-
-      return {
-        id: newInst.id,
-        name: newInst.name,
-        slug: newInst.slug,
-        tier: newInst.tier,
-        status: newInst.status,
-        max_seats: newInst.max_seats,
-        enrolled_seats: 0,
-        active_from: newInst.active_from,
-        license_end: newInst.license_end,
-        billing_contact: newInst.billing_contact || "",
-        annual_contract_value: newInst.annual_contract_value || 0,
         domains: cleanDomain ? [cleanDomain] : [],
-        created_at: newInst.created_at,
+        created_at: new Date().toISOString(),
       };
     }
-  } catch {
-    // Fall back to memory store
   }
 
-  // Memory store addition
-  const newInst: Institution = {
-    id: `inst-${Date.now()}`,
-    name: input.name,
-    slug,
-    tier: input.tier || "standard",
-    status: "active",
-    max_seats: input.max_seats || 50,
-    enrolled_seats: 0,
-    active_from: activeFrom,
-    license_end: licenseEnd,
-    billing_contact: input.billing_contact || "",
-    annual_contract_value: input.annual_contract_value || 24000,
-    domains: cleanDomain ? [cleanDomain] : [],
-    created_at: new Date().toISOString(),
-  };
+  // Update in-memory store
+  const existingMemIdx = memoryInstitutions.findIndex(
+    (i) => i.id === createdInst!.id || i.slug === createdInst!.slug
+  );
+  if (existingMemIdx >= 0) {
+    memoryInstitutions[existingMemIdx] = createdInst;
+  } else {
+    memoryInstitutions = [createdInst, ...memoryInstitutions];
+  }
 
-  memoryInstitutions = [newInst, ...memoryInstitutions];
-  return newInst;
+  return createdInst;
 }
 
 /**
@@ -313,15 +438,20 @@ export async function toggleDomainStatus(
 ): Promise<boolean> {
   const clean = normalizeDomain(domain);
   try {
-    const supabase = createClient();
-    await supabase
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
       .from("institution_domains")
       .update({ is_active: isActive })
       .eq("domain", clean);
-  } catch {
-    // fallback
+
+    if (error) {
+      console.error("[Licensing] Error toggling domain status:", error);
+    }
+  } catch (err) {
+    console.error("[Licensing] Exception in toggleDomainStatus:", err);
   }
 
+  // Update memory store
   memoryInstitutions = memoryInstitutions.map((inst) => {
     if (inst.domains.includes(clean)) {
       if (isActive) {
