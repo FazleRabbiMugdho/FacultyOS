@@ -107,23 +107,21 @@ export default function LoginPage() {
       const supabase = createClient();
       let { error } = await supabase.auth.signInWithPassword({ email, password });
 
-      // Auto-provision demo accounts in development if not existing
+      // Auto-provision demo accounts via server admin API if not existing (bypasses Supabase 429 rate limits)
       if (error && (email.endsWith("@ause.edu") || email.endsWith("@facultyos.edu") || email.endsWith("@facultyos.io"))) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: isProvider ? "Platform Operator" : "Dr. Eleanor Vance",
-              role: isProvider ? "service_provider" : "senior",
-              account_type: isProvider ? "service_provider" : "university_user",
-              is_super_admin: isProvider,
-            },
-          },
-        });
-        if (!signUpError) {
-          const res = await supabase.auth.signInWithPassword({ email, password });
-          error = res.error;
+        try {
+          const provRes = await fetch("/api/auth/provision-demo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, isProvider }),
+          });
+          const provData = await provRes.json();
+          if (provData.success) {
+            const retryLogin = await supabase.auth.signInWithPassword({ email, password });
+            error = retryLogin.error;
+          }
+        } catch {
+          // fallback to original error
         }
       }
 
