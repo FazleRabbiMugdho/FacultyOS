@@ -4,6 +4,7 @@ import * as React from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { OutcomesTab } from "@/components/design/OutcomesTab";
+import { CoPoMatrix } from "@/components/design/CoPoMatrix";
 import { NewCourseDialog } from "@/components/design/NewCourseDialog";
 import { type Course } from "@/lib/design/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -238,14 +239,9 @@ export default function DesignPage() {
               <OutcomesTab course={selectedCourse} />
             </TabsContent>
 
-            {/* Tab 2: CO-PO Matrix Tab (Prompt A2 Standby) */}
+            {/* Tab 2: CO-PO Matrix Tab (Prompt A2 Feature) */}
             <TabsContent value="co-po" className="space-y-6 focus-visible:outline-none">
-              <EmptyState
-                icon={<Grid className="h-7 w-7 text-primary" />}
-                title="CO–PO Correlation Matrix Workspace (Feature A2)"
-                description={`Construct the sparse 1–3 correlation matrix mapping ${selectedCourse.code} Course Outcomes against institutional Program Outcomes (POs).`}
-                actionLabel="Ready for Feature A2"
-              />
+              <CoPoMatrix course={selectedCourse} />
             </TabsContent>
 
             {/* Tab 3: Blueprint & Drift Tab (Prompt A3 Standby) */}

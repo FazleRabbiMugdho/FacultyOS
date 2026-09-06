@@ -84,3 +84,48 @@ export const UpdateOutcomeSchema = z.object({
 });
 
 export type UpdateOutcomeInput = z.infer<typeof UpdateOutcomeSchema>;
+
+// ==========================================
+// Prompt A2: CO–PO Mapping Schemas
+// ==========================================
+
+export const GenerateCoPoSchema = z.object({
+  course_id: z.string().uuid("Invalid course ID format"),
+});
+
+export const SingleCoPoMappingSchema = z.object({
+  co_code: z.string().describe("Course Outcome Code, e.g., 'CO1'"),
+  po_code: z.string().describe("Program Outcome Code, e.g., 'PO1', 'PO2'"),
+  weight: z
+    .number()
+    .int()
+    .min(1)
+    .max(3)
+    .describe(
+      "Correlation weight: 1 (Low - recall/foundational), 2 (Medium - application/methods), 3 (High - analysis/design/synthesis)"
+    ),
+  rationale: z
+    .string()
+    .optional()
+    .describe("Brief justification for this specific correlation"),
+});
+
+export const AIGeneratedCoPoSchema = z.object({
+  mappings: z
+    .array(SingleCoPoMappingSchema)
+    .describe(
+      "List of non-zero correlations. Must be sparse! Each CO should correlate to only 2-4 POs where genuine correlation exists."
+    ),
+});
+
+export const UpdateCoPoCellSchema = z.object({
+  co_id: z.string().uuid("Invalid CO ID"),
+  po_id: z.string().uuid("Invalid PO ID"),
+  weight: z
+    .number()
+    .int()
+    .min(0, "Weight must be 0, 1, 2, or 3")
+    .max(3, "Weight cannot exceed 3"),
+});
+
+export type UpdateCoPoCellInput = z.infer<typeof UpdateCoPoCellSchema>;

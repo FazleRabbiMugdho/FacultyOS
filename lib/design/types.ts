@@ -101,6 +101,30 @@ export interface CourseOutcome {
   created_at?: string;
 }
 
+export interface ProgramOutcome {
+  id: string;
+  code: string;
+  description: string;
+  created_at?: string;
+}
+
+export interface CoPoMapping {
+  id?: string;
+  co_id: string;
+  po_id: string;
+  weight: 1 | 2 | 3;
+  created_at?: string;
+}
+
+export interface CoPoMatrixResponse {
+  course_outcomes: CourseOutcome[];
+  program_outcomes: ProgramOutcome[];
+  mappings: CoPoMapping[];
+  sparsity_percent: number;
+  total_cells: number;
+  mapped_cells: number;
+}
+
 export interface DocumentRecord {
   id: string;
   course_id: string;
