@@ -9,15 +9,16 @@ const DedupRequestSchema = z.object({
   course_id: z.string().optional(),
   blueprint_id: z.string().optional(),
   questions: z.array(z.any()).optional(),
+  generated_questions: z.array(z.any()).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.json();
-    const { course_id, blueprint_id, questions } = DedupRequestSchema.parse(rawBody);
+    const { course_id, blueprint_id, questions, generated_questions } = DedupRequestSchema.parse(rawBody);
 
     let historicalList: HistoricalQuestion[] = [...MOCK_HISTORICAL_QUESTIONS];
-    let candidateQuestions: QuestionItem[] = questions || [];
+    let candidateQuestions: QuestionItem[] = questions || generated_questions || [];
 
     // 1. Fetch from Supabase if questions weren't passed in body
     try {
