@@ -140,6 +140,18 @@ export const SEEDED_MOCK_RUBRICS: Record<string, Rubric> = {
   },
 };
 
+SEEDED_MOCK_RUBRICS["hist-cs301-2024-q1"] = {
+  ...SEEDED_MOCK_RUBRICS["gen-dijkstra-01"],
+  id: "rubric-hist-dijkstra-01",
+  question_id: "hist-cs301-2024-q1",
+};
+
+SEEDED_MOCK_RUBRICS["hist-ai402-2023-q4"] = {
+  ...SEEDED_MOCK_RUBRICS["hist-bayes-01"],
+  id: "rubric-hist-bayes-01",
+  question_id: "hist-ai402-2023-q4",
+};
+
 /**
  * Normalizes criteria max_marks so that they sum to exact target marks
  */
