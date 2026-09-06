@@ -60,7 +60,51 @@ export function GenerateTab() {
   React.useEffect(() => {
     const courseId = searchParams.get("course_id");
     const blueprintId = searchParams.get("blueprint_id");
-    if (!courseId) return;
+
+    // Fully hydrate a real DB course (outcomes + blueprint + topics) into MockCourse shape.
+    async function hydrateCourse(course: any): Promise<MockCourse> {
+      try {
+        const [outcomesResponse, blueprintResponse] = await Promise.all([
+          fetch(`/api/design/outcomes?course_id=${course.id}`),
+          fetch(`/api/design/blueprint?course_id=${course.id}`),
+        ]);
+        const outcomesData = await outcomesResponse.json();
+        const blueprintData = await blueprintResponse.json();
+        const blueprints = blueprintData.blueprint
+          ? [{ ...blueprintData.blueprint, topics: blueprintData.topics || [] }]
+          : [{ ...MOCK_COURSES[0].blueprints[0], id: `bp-auto-${course.id}` }];
+        return {
+          ...course,
+          outcomes: outcomesData.outcomes?.length ? outcomesData.outcomes : MOCK_COURSES[0].outcomes,
+          blueprints,
+        };
+      } catch {
+        return { ...course, outcomes: MOCK_COURSES[0].outcomes, blueprints: [{ ...MOCK_COURSES[0].blueprints[0], id: `bp-auto-${course.id}` }] };
+      }
+    }
+
+    // Default: load real courses so generated questions persist to the shared DB
+    // (a valid course_id is required — mock "course-*" ids get nulled and dropped).
+    async function loadRealCourses() {
+      try {
+        const coursesResponse = await fetch("/api/design/courses");
+        const coursesData = await coursesResponse.json();
+        const realCourses = coursesData.courses || [];
+        if (!realCourses.length) return;
+        const hydrated = await Promise.all(realCourses.map(hydrateCourse));
+        setCourses([...hydrated, ...MOCK_COURSES]);
+        setSelectedCourseId(hydrated[0].id);
+        if (hydrated[0].blueprints[0]) setSelectedBlueprintId(hydrated[0].blueprints[0].id);
+      } catch {
+        // keep MOCK_COURSES fallback
+      }
+    }
+
+    if (!courseId) {
+      void loadRealCourses();
+      return;
+    }
+
     const localCourse = MOCK_COURSES.find((item) => item.id === courseId);
     if (localCourse) {
       setSelectedCourseId(courseId);
@@ -278,7 +322,7 @@ export function GenerateTab() {
                 value={selectedCourseId}
                 onValueChange={(val) => {
                   setSelectedCourseId(val);
-                  const c = MOCK_COURSES.find((item) => item.id === val);
+                  const c = courses.find((item) => item.id === val);
                   if (c && c.blueprints[0]) {
                     setSelectedBlueprintId(c.blueprints[0].id);
                   }

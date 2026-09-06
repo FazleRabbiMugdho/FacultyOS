@@ -10,6 +10,9 @@ import {
   QuestionItem,
 } from "@/lib/questions/types";
 import { MOCK_COURSES } from "@/lib/questions/mock-blueprint";
+import { generateAnalyticRubric } from "@/lib/questions/rubric";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: NextRequest) {
   try {
@@ -270,6 +273,26 @@ Return pure valid JSON with array of questions following the schema.
         }
       } catch (dbErr) {
         // In local/mock mode, continue with generatedId
+      }
+
+      // Auto-create an analytic rubric so the question is immediately gradable in Track C.
+      if (UUID_RE.test(generatedId)) {
+        try {
+          const rubric = await generateAnalyticRubric({
+            question_id: generatedId,
+            text: q.text,
+            marks: q.marks,
+            bloom_level: q.bloom_level,
+            skill_signature: q.skill_signature,
+            co_code: q.co_code,
+          });
+          const supabase = createAdminClient();
+          await supabase
+            .from("rubrics")
+            .insert({ question_id: generatedId, criteria: rubric.criteria, total_marks: rubric.total_marks });
+        } catch (rubricErr) {
+          console.warn("[Auto-rubric persist warning]:", rubricErr instanceof Error ? rubricErr.message : rubricErr);
+        }
       }
 
       questionsWithIds.push({
