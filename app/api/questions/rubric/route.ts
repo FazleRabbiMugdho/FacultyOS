@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateAnalyticRubric, normalizeRubricCriteria, SEEDED_MOCK_RUBRICS } from "@/lib/questions/rubric";
 import { GenerateRubricRequestSchema, RubricSchema } from "@/lib/questions/types";
+import { MOCK_HISTORICAL_QUESTIONS } from "@/lib/questions/mock-historical";
 
 /**
  * GET /api/questions/rubric?question_id=...
@@ -46,6 +47,19 @@ export async function GET(req: NextRequest) {
           rubric: SEEDED_MOCK_RUBRICS[questionId],
           source: "seeded",
         });
+      }
+
+      const historicalQuestion = MOCK_HISTORICAL_QUESTIONS.find((question) => question.id === questionId);
+      if (historicalQuestion) {
+        const fallbackRubric = await generateAnalyticRubric({
+          question_id: questionId,
+          text: historicalQuestion.text,
+          marks: historicalQuestion.marks,
+          bloom_level: historicalQuestion.bloom_level,
+          skill_signature: historicalQuestion.skill_signature,
+          co_code: historicalQuestion.co_code,
+        });
+        return NextResponse.json({ success: true, rubric: fallbackRubric, source: "historical-fallback" });
       }
 
       // If question exists in DB without rubric, fetch question details for auto-gen
