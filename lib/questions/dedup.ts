@@ -97,7 +97,7 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 
 /**
  * Layer 3: Conceptual Skill-Match
- * Blends skill_signature lexical similarity with tag overlap
+ * Blends skill_signature containment overlap with normalized concept tag intersection
  */
 export function computeSkillMatch(
   sigA: string,
@@ -108,26 +108,32 @@ export function computeSkillMatch(
   if (!sigA || !sigB) return 0;
 
   // 1. Signature lexical overlap
-  const sigJaccard = jaccard(sigA, sigB);
+  const tokensA = Array.from(tokenize(sigA));
+  const tokensB = Array.from(tokenize(sigB));
+  const setB = new Set(tokensB);
 
-  // 2. Skill tags Jaccard overlap
-  const setTagsA = new Set(tagsA.map((t) => t.toLowerCase()));
-  const setTagsB = new Set(tagsB.map((t) => t.toLowerCase()));
-
-  let tagOverlap = 0;
-  if (setTagsA.size > 0 && setTagsB.size > 0) {
-    let inter = 0;
-    const listTagsA = Array.from(setTagsA);
-    for (let i = 0; i < listTagsA.length; i++) {
-      if (setTagsB.has(listTagsA[i])) inter++;
-    }
-    const union = new Set([...listTagsA, ...Array.from(setTagsB)]).size;
-    tagOverlap = union > 0 ? inter / union : 0;
+  let sigInter = 0;
+  for (const t of tokensA) {
+    if (setB.has(t)) sigInter++;
   }
+  const minSigSize = Math.min(tokensA.length, tokensB.length);
+  const sigOverlap = minSigSize > 0 ? sigInter / minSigSize : 0;
 
-  // 3. Normalized heuristic composite
-  const combined = sigJaccard * 0.5 + tagOverlap * 0.5;
-  return Math.round(combined * 100) / 100;
+  // 2. Skill tags token overlap (normalizing hyphenated / spaced tags)
+  const tagWordsA = Array.from(new Set(tagsA.flatMap((t) => t.toLowerCase().replace(/[-_]/g, " ").split(/\s+/).filter((w) => w.length > 2))));
+  const tagWordsB = Array.from(new Set(tagsB.flatMap((t) => t.toLowerCase().replace(/[-_]/g, " ").split(/\s+/).filter((w) => w.length > 2))));
+  const setTagWordsB = new Set(tagWordsB);
+
+  let tagInter = 0;
+  for (const w of tagWordsA) {
+    if (setTagWordsB.has(w)) tagInter++;
+  }
+  const minTagSize = Math.min(tagWordsA.length, tagWordsB.length);
+  const tagOverlap = minTagSize > 0 ? tagInter / minTagSize : 0;
+
+  // 3. Composite score (boosted when concept tags and signatures align)
+  const composite = Math.max(sigOverlap, tagOverlap) * 0.70 + Math.min(sigOverlap, tagOverlap) * 0.30;
+  return Math.round(Math.min(1.0, composite) * 100) / 100;
 }
 
 /**
@@ -148,6 +154,8 @@ export function auditQuestion(
   let disguiseReason = "";
   let recommendation = "Original question. No historical conflict detected.";
 
+  let bestPeakScore = 0;
+
   for (const hist of historicalQuestions) {
     // 1. Lexical Jaccard
     const jaccardScore = jaccard(question.text, hist.text);
@@ -158,8 +166,8 @@ export function auditQuestion(
     if (questionEmbedding && histVec) {
       cosineScore = cosineSimilarity(questionEmbedding, histVec);
     } else {
-      // Heuristic fallback if embeddings aren't loaded in memory
-      cosineScore = Math.min(1, jaccardScore * 1.3 + (question.topic === hist.topic ? 0.35 : 0));
+      // Robust heuristic fallback if embeddings aren't loaded in memory
+      cosineScore = Math.min(1, Math.round((jaccardScore * 1.25 + (question.topic === hist.topic ? 0.35 : 0.1)) * 100) / 100);
     }
 
     // 3. Conceptual Skill Signature
@@ -170,35 +178,34 @@ export function auditQuestion(
       hist.skill_tags
     );
 
-    // Track highest matches
-    if (cosineScore > highestCosine || jaccardScore > highestJaccard || skillScore > highestSkillMatch) {
-      if (cosineScore >= 0.70 || jaccardScore >= 0.50 || skillScore >= 0.75) {
-        highestCosine = Math.max(highestCosine, cosineScore);
-        highestJaccard = Math.max(highestJaccard, jaccardScore);
-        highestSkillMatch = Math.max(highestSkillMatch, skillScore);
-        matchedHist = hist;
-      }
+    const peakScore = Math.max(cosineScore, jaccardScore, skillScore);
+    if (peakScore > bestPeakScore) {
+      bestPeakScore = peakScore;
+      highestCosine = cosineScore;
+      highestJaccard = jaccardScore;
+      highestSkillMatch = skillScore;
+      matchedHist = hist;
     }
   }
 
   // Decision Rules
-  if (matchedHist) {
+  if (matchedHist && bestPeakScore >= 0.25) {
     // Rule 1: High Semantic or Lexical overlap -> REJECTED
-    if (highestCosine >= 0.82 || highestJaccard >= 0.60) {
+    if (highestCosine >= 0.75 || highestJaccard >= 0.55) {
       status = "rejected";
-      dominantLayer = highestCosine >= 0.82 ? "semantic" : "lexical";
+      dominantLayer = highestCosine >= 0.75 ? "semantic" : "lexical";
       recommendation = `High duplicate detected vs ${matchedHist.exam_year} (${matchedHist.semester}). Regenerate or replace question.`;
       disguiseReason = "Surface wording or structure is nearly identical to past exam paper.";
     }
     // Rule 2: ⭐ Layer 3 — Conceptual Skill Signature ("Same skill, different disguise")
-    else if (highestSkillMatch >= 0.80 && highestCosine < 0.75 && highestJaccard < 0.50) {
+    else if (highestSkillMatch >= 0.45 && highestJaccard < 0.40) {
       status = "review";
       dominantLayer = "skill";
       recommendation = `Same cognitive skill disguised in different domain context vs ${matchedHist.exam_year}. Review required to avoid testing predictability.`;
       disguiseReason = `Tested skill '${question.skill_signature}' matches historical question despite different story/numbers.`;
     }
     // Rule 3: Moderate Semantic similarity -> REVIEW
-    else if (highestCosine >= 0.70) {
+    else if (highestCosine >= 0.60) {
       status = "review";
       dominantLayer = "semantic";
       recommendation = `Moderate semantic overlap with ${matchedHist.exam_year}. Verify that parameters are sufficiently distinct.`;
