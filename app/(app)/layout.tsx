@@ -2,6 +2,7 @@ import * as React from "react";
 import { getProfile, getUser } from "@/lib/auth";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TopBar } from "@/components/shell/TopBar";
+import { PageTransition } from "@/components/shell/PageTransition";
 
 export default async function AppLayout({
   children,
@@ -23,8 +24,8 @@ export default async function AppLayout({
           userName={profile?.full_name || "Faculty Member"}
           userRole={profile?.role || "senior"}
         />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto animate-fade-in">
-          {children}
+        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

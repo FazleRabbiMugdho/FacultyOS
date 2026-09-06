@@ -117,7 +117,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       {/* Top Header */}
       <PageHeader
         title="Faculty Academic Lifecycle"
@@ -137,15 +137,15 @@ export default async function DashboardPage() {
         }
       />
 
-      <section className="flex flex-col gap-4 border-y border-border/60 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <section className="reveal delay-1 flex flex-col gap-4 border-y border-border/60 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" /></span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-300 hover:scale-105"><CalendarDays className="h-5 w-5" /></span>
           <div><p className="text-sm font-semibold">Conflict-safe course routine</p><p className="text-xs text-muted-foreground">Assign weekly sessions only when the instructor, room, and cohort are all available.</p></div>
         </div>
-        <Button asChild variant="outline"><Link href="/routine">Open Routine <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+        <Button asChild variant="outline" className="press group"><Link href="/routine">Open Routine <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></Link></Button>
       </section>
 
-      <section className="border-y border-border/60 py-5" aria-label="Lifecycle progress">
+      <section className="reveal delay-2 border-y border-border/60 py-5" aria-label="Lifecycle progress">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold">{course ? `${course.code}: ${course.title}` : "No active course yet"}</p>
@@ -168,34 +168,36 @@ export default async function DashboardPage() {
       </section>
 
       {/* Hero Banner with Soft Depth */}
-      <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card/50 to-indigo-500/5 p-8 backdrop-blur-xl shadow-xl">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+      <div className="reveal-blur delay-3 relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card/50 to-indigo-500/5 p-8 backdrop-blur-xl shadow-xl">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/15 blur-3xl pointer-events-none animate-float" />
+        <div className="absolute -left-16 -bottom-10 h-52 w-52 rounded-full bg-violet-500/10 blur-3xl pointer-events-none animate-float-rev" />
         <div className="relative z-10 max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
+            <Sparkles className="h-3.5 w-3.5 animate-glow-pulse" />
             Human-in-the-Loop Architecture
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            From Raw Syllabus to Fairly Graded Exams
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <span className="text-foreground">From Raw Syllabus to </span>
+            <span className="text-gradient-brand">Fairly Graded Exams</span>
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             IAPEA replaces academic cognitive fatigue with intelligent automation while keeping university faculty in complete editorial control at every step.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-            <div className="rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
+          <div className="stagger-children grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+            <div className="hover-lift rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
               <div className="text-xs text-muted-foreground">OBE Outcomes</div>
               <div className="text-lg font-bold text-foreground">Bloom 1–6</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
+            <div className="hover-lift rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
               <div className="text-xs text-muted-foreground">Dedup Engine</div>
               <div className="text-lg font-bold text-foreground">3 Layers</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
+            <div className="hover-lift rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
               <div className="text-xs text-muted-foreground">Grading Vision</div>
               <div className="text-lg font-bold text-foreground">Image-Native</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
+            <div className="hover-lift rounded-xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm">
               <div className="text-xs text-muted-foreground">Fairness Target</div>
               <div className="text-lg font-bold text-foreground">κ ≥ 0.85</div>
             </div>
@@ -204,11 +206,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* 3 Lifecycle Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="stagger-children grid grid-cols-1 md:grid-cols-3 gap-6">
         {lifecycleStages.map((stage) => (
           <Card
             key={stage.id}
-            className="group flex flex-col justify-between rounded-2xl border border-border/80 bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-200"
+            className="hover-lift group flex flex-col justify-between rounded-2xl border border-border/80 bg-card hover:border-primary/50"
           >
             <div>
               <CardHeader className="space-y-2">
@@ -252,10 +254,10 @@ export default async function DashboardPage() {
             </div>
 
             <CardFooter className="pt-2">
-              <Button asChild className="w-full gap-2 rounded-xl">
+              <Button asChild className="w-full gap-2 rounded-xl press group/btn">
                 <Link href={stage.href}>
                   {stage.cta}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
               </Button>
             </CardFooter>
