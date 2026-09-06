@@ -19,6 +19,9 @@ import {
   BookOpen,
   FileCheck,
   BarChart3,
+  Building2,
+  Sparkles,
+  Key,
 } from "lucide-react";
 
 /* ─── Data ─────────────────────────────────────────────────────── */
@@ -40,30 +43,38 @@ const FEATURES = [
   },
 ];
 
-const DEMO_ROLES = [
+const CAMPUS_ROLES = [
   {
     label: "Junior Faculty",
     role: "Examiner · E1",
-    email: "junior@facultyos.edu",
+    email: "junior@ause.edu",
     accent: "#3b82f6",
     dotClass: "bg-blue-500",
-    selectedClass: "border-blue-500/50 bg-blue-500/5",
   },
   {
     label: "Senior Faculty",
     role: "Arbitrator · E2/E3",
-    email: "senior@facultyos.edu",
+    email: "senior@ause.edu",
     accent: "#f59e0b",
     dotClass: "bg-amber-500",
-    selectedClass: "border-amber-500/50 bg-amber-500/5",
   },
   {
-    label: "Dean / Admin",
-    role: "Program Chair",
-    email: "admin@facultyos.edu",
+    label: "Dept. Chair",
+    role: "Academic Lead",
+    email: "chair@ause.edu",
     accent: "#8b5cf6",
     dotClass: "bg-violet-500",
-    selectedClass: "border-violet-500/50 bg-violet-500/5",
+  },
+];
+
+const PROVIDER_ROLES = [
+  {
+    label: "Platform Operator",
+    role: "Developer / Super-Admin",
+    email: "admin@facultyos.io",
+    accent: "#a855f7",
+    dotClass: "bg-purple-500",
+    desc: "Global licensing, domain allowlisting & monetization",
   },
 ];
 
@@ -76,6 +87,7 @@ const METRICS = [
 /* ─── Component ─────────────────────────────────────────────────── */
 export default function LoginPage() {
   const router = useRouter();
+  const [portalPersona, setPortalPersona] = React.useState<"university" | "provider">("university");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -87,18 +99,25 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const isProvider =
+        portalPersona === "provider" ||
+        email.endsWith("@facultyos.io") ||
+        email.startsWith("admin@facultyos");
+
       const supabase = createClient();
       let { error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (error && email.endsWith("@facultyos.edu")) {
-        const role = email.split("@")[0] as "junior" | "senior" | "admin";
+      // Auto-provision demo accounts in development if not existing
+      if (error && (email.endsWith("@ause.edu") || email.endsWith("@facultyos.edu") || email.endsWith("@facultyos.io"))) {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              full_name: `${role.charAt(0).toUpperCase() + role.slice(1)} Faculty`,
-              role,
+              full_name: isProvider ? "Platform Operator" : "Dr. Eleanor Vance",
+              role: isProvider ? "admin" : "senior",
+              account_type: isProvider ? "service_provider" : "university_user",
+              is_super_admin: isProvider,
             },
           },
         });
@@ -109,8 +128,14 @@ export default function LoginPage() {
       }
 
       if (error) { toast.error(error.message || "Failed to sign in"); return; }
-      toast.success("Welcome back.");
-      router.push("/dashboard");
+
+      if (isProvider) {
+        toast.success("Welcome, Platform Operator. Service Provider console active.");
+        router.push("/admin/licensing");
+      } else {
+        toast.success("Welcome back to your campus workspace.");
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err: any) {
       toast.error(err?.message || "An unexpected error occurred");
@@ -119,7 +144,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (role: (typeof DEMO_ROLES)[number]) => {
+  const handleDemoLogin = (role: { email: string; label: string; [key: string]: any }) => {
     setSelectedRole(role.email);
     setEmail(role.email);
     setPassword("DemoFaculty123!");
@@ -324,16 +349,57 @@ export default function LoginPage() {
 
           <div className="relative w-full max-w-[360px] space-y-7">
 
+            {/* Persona Switcher Tabs */}
+            <div className="auth-stagger-1 p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.05] border border-border/50 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPortalPersona("university");
+                  setSelectedRole(null);
+                  setEmail("");
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  portalPersona === "university"
+                    ? "bg-white dark:bg-[#181820] text-zinc-900 dark:text-white shadow-sm border border-border/40"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                <span>University Faculty</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPortalPersona("provider");
+                  setSelectedRole("admin@facultyos.io");
+                  setEmail("admin@facultyos.io");
+                  setPassword("DemoFaculty123!");
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  portalPersona === "provider"
+                    ? "bg-purple-600 text-white shadow-sm shadow-purple-500/25"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                <span>Platform Operator</span>
+              </button>
+            </div>
+
             {/* Heading block */}
             <div className="auth-stagger-1 space-y-1.5">
               <h2
                 className="font-bold tracking-tight text-zinc-900 dark:text-white"
-                style={{ fontSize: "26px", letterSpacing: "-0.025em" }}
+                style={{ fontSize: "24px", letterSpacing: "-0.025em" }}
               >
-                Sign in
+                {portalPersona === "provider"
+                  ? "Platform Operator Console"
+                  : "University Sign In"}
               </h2>
-              <p className="text-[13.5px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                Use your institutional email to continue.
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                {portalPersona === "provider"
+                  ? "Master operator console for university licensing, domain gating, and monetization."
+                  : "Sign in with your authorized institutional email (e.g. @ause.edu)."}
               </p>
             </div>
 
@@ -343,39 +409,78 @@ export default function LoginPage() {
                 className="text-[10px] font-semibold uppercase tracking-[0.16em]"
                 style={{ color: "#94a3b8" }}
               >
-                Quick demo access
+                {portalPersona === "provider"
+                  ? "Operator Fast-Login"
+                  : "Quick Demo Campus Access"}
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {DEMO_ROLES.map((r) => {
-                  const isSelected = selectedRole === r.email;
-                  return (
-                    <button
-                      key={r.email}
-                      type="button"
-                      onClick={() => handleDemoLogin(r)}
-                      className={`role-btn ${isSelected ? "role-selected" : ""} flex flex-col gap-1.5 p-3 rounded-xl border text-left outline-none`}
-                      style={{
-                        background: isSelected ? `${r.accent}08` : "transparent",
-                        borderColor: isSelected ? `${r.accent}50` : "rgba(226,232,240,1)",
-                        boxShadow: isSelected ? `0 0 0 1px ${r.accent}30` : "none",
-                      }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full shrink-0"
-                          style={{ background: r.accent }}
-                        />
-                        <span className="text-[11.5px] font-semibold text-zinc-800 dark:text-zinc-200 leading-none">
-                          {r.label}
+
+              {portalPersona === "university" ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {CAMPUS_ROLES.map((r) => {
+                    const isSelected = selectedRole === r.email;
+                    return (
+                      <button
+                        key={r.email}
+                        type="button"
+                        onClick={() => handleDemoLogin(r)}
+                        className={`role-btn ${isSelected ? "role-selected" : ""} flex flex-col gap-1.5 p-2.5 rounded-xl border text-left outline-none transition-all`}
+                        style={{
+                          background: isSelected ? `${r.accent}08` : "transparent",
+                          borderColor: isSelected ? `${r.accent}50` : "rgba(226,232,240,1)",
+                          boxShadow: isSelected ? `0 0 0 1px ${r.accent}30` : "none",
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                            style={{ background: r.accent }}
+                          />
+                          <span className="text-[11.5px] font-semibold text-zinc-800 dark:text-zinc-200 leading-none">
+                            {r.label}
+                          </span>
+                        </div>
+                        <span className="text-[10px] leading-tight pl-3" style={{ color: "#94a3b8" }}>
+                          {r.role}
                         </span>
-                      </div>
-                      <span className="text-[10.5px] leading-tight pl-3" style={{ color: "#94a3b8" }}>
-                        {r.role}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div>
+                  {PROVIDER_ROLES.map((r) => {
+                    const isSelected = selectedRole === r.email;
+                    return (
+                      <button
+                        key={r.email}
+                        type="button"
+                        onClick={() => handleDemoLogin(r)}
+                        className="w-full flex items-center justify-between p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-left outline-none hover:bg-purple-500/15 transition-all shadow-sm"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white">
+                            <Key className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <span>{r.label}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-purple-500/25 text-[9.5px] font-mono text-purple-300 uppercase">
+                                Super-Admin
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-purple-200/70">
+                              {r.email} · Master Provider Console
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-purple-300">
+                          Use →
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Divider */}

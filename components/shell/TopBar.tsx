@@ -15,19 +15,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, Laptop, LogOut, User, Shield, Sparkles } from "lucide-react";
+import { Moon, Sun, Laptop, LogOut, User, Shield, Sparkles, Building2, ShieldCheck, Key } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface TopBarProps {
   userEmail?: string | null;
   userName?: string | null;
   userRole?: "admin" | "senior" | "junior";
+  accountType?: "university_user" | "service_provider";
+  institutionName?: string | null;
+  institutionTier?: string | null;
+  isSuperAdmin?: boolean;
 }
 
 export function TopBar({
-  userEmail = "faculty@university.edu",
+  userEmail = "faculty@ause.edu",
   userName = "Dr. Eleanor Vance",
   userRole = "senior",
+  accountType = "university_user",
+  institutionName = "American University of Science & Engineering",
+  institutionTier = "Enterprise",
+  isSuperAdmin = false,
 }: TopBarProps) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -44,34 +53,63 @@ export function TopBar({
     }
   };
 
+  const isProvider = accountType === "service_provider" || isSuperAdmin;
+
   const roleLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "success" | "warning" | "danger" | "glass" }> = {
     junior: { label: "Junior Faculty (E1)", variant: "secondary" },
     senior: { label: "Senior Faculty (E2/E3)", variant: "default" },
-    admin: { label: "Department Admin", variant: "warning" },
+    admin: { label: "Department Chair", variant: "warning" },
   };
 
   const currentRole = roleLabels[userRole] || roleLabels.junior;
 
   return (
     <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-md">
-      {/* Left breadcrumb / title indication */}
+      {/* Left breadcrumb / Tenancy & Identity indication */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">FacultyOS</span>
-          <span>/</span>
-          <span className="rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">
-            Academic Year 2026–2027
-          </span>
-        </div>
+        {isProvider ? (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-purple-400" />
+              FacultyOS Platform
+            </span>
+            <span className="text-muted-foreground">/</span>
+            <span className="rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 px-2.5 py-0.5 font-semibold text-[11px] flex items-center gap-1">
+              <Key className="w-3 h-3 text-purple-400" />
+              Service Provider · Developer Console
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <Building2 className="h-3.5 w-3.5 text-indigo-400" />
+              <span className="truncate max-w-[260px] sm:max-w-[340px]">
+                {institutionName || "American University of Science & Engineering"}
+              </span>
+            </div>
+            <span>/</span>
+            <span className="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-medium hidden sm:inline-flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              {institutionTier ? `${institutionTier.toUpperCase()} License` : "Licensed Campus"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Right controls */}
       <div className="flex items-center gap-3">
         {/* Role Badge */}
-        <Badge variant={currentRole.variant} className="hidden sm:inline-flex gap-1.5 py-1 text-xs">
-          <Shield className="h-3 w-3" />
-          {currentRole.label}
-        </Badge>
+        {isProvider ? (
+          <Badge className="hidden sm:inline-flex gap-1.5 py-1 text-xs bg-purple-600/15 text-purple-300 border-purple-500/30">
+            <Shield className="h-3 w-3 text-purple-400" />
+            Platform Super-Admin
+          </Badge>
+        ) : (
+          <Badge variant={currentRole.variant} className="hidden sm:inline-flex gap-1.5 py-1 text-xs">
+            <Shield className="h-3 w-3" />
+            {currentRole.label}
+          </Badge>
+        )}
 
         {/* Theme Switcher */}
         <DropdownMenu>
@@ -130,13 +168,22 @@ export function TopBar({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {isProvider ? (
+              <DropdownMenuItem asChild>
+                <Link href="/admin/licensing" className="flex items-center cursor-pointer text-purple-400 font-medium">
+                  <Key className="mr-2 h-4 w-4 text-purple-400" />
+                  Provider Licensing Console
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <div className="px-2 py-1 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="truncate">{institutionName}</span>
+              </div>
+            )}
             <DropdownMenuItem disabled>
               <User className="mr-2 h-4 w-4" />
-              Profile & Preferences
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              <Sparkles className="mr-2 h-4 w-4 text-primary" />
-              AI Prompt Settings
+              Academic Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

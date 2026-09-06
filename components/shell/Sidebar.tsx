@@ -71,9 +71,27 @@ const navigationItems = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  accountType?: "university_user" | "service_provider";
+  isSuperAdmin?: boolean;
+  institutionName?: string;
+}
+
+export function Sidebar({
+  accountType = "university_user",
+  isSuperAdmin = false,
+  institutionName = "American University of Science & Engineering",
+}: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
+
+  // Filter items: Provider console is only visible to Service Providers / Developers
+  const visibleItems = navigationItems.filter((item) => {
+    if (item.track === "Provider") {
+      return isSuperAdmin || accountType === "service_provider";
+    }
+    return true;
+  });
 
   return (
     <aside
@@ -102,7 +120,9 @@ export function Sidebar() {
                 </span>
               </div>
               <span className="text-[11px] text-muted-foreground truncate">
-                Academic Co-Pilot
+                {accountType === "service_provider"
+                  ? "Platform Operator"
+                  : "Campus Workspace"}
               </span>
             </div>
           )}
@@ -123,13 +143,35 @@ export function Sidebar() {
         </Button>
       </div>
 
+      {/* Tenant Indicator Pill */}
+      {!collapsed && (
+        <div className="px-4 pt-3 pb-1">
+          {accountType === "service_provider" ? (
+            <div className="px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center justify-between text-[11px]">
+              <span className="font-semibold text-purple-300 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-purple-400" />
+                Service Provider Mode
+              </span>
+              <span className="text-[10px] text-purple-400 font-mono">ROOT</span>
+            </div>
+          ) : (
+            <div className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-1.5 text-[11px]">
+              <Building2 className="w-3 h-3 text-indigo-400 shrink-0" />
+              <span className="font-medium text-foreground truncate">
+                {institutionName}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5">
         <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           {!collapsed ? "Academic Lifecycle" : "•••"}
         </div>
 
-        {navigationItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));

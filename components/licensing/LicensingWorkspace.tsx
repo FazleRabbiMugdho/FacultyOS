@@ -20,7 +20,9 @@ import {
   Check,
   AlertTriangle,
   RefreshCw,
+  Key,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -216,7 +218,42 @@ export function LicensingWorkspace() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* ─── Service Provider Identity & Simulation Banner ─── */}
+      <div className="p-3.5 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-indigo-950/25 to-purple-950/40 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-purple-600/25 border border-purple-500/35 flex items-center justify-center text-purple-300 shrink-0">
+            <Key className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-bold text-white flex items-center gap-2">
+              <span>FacultyOS Platform Provider & Developer Console</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/25 border border-purple-500/40 text-[10px] font-mono text-purple-300 uppercase tracking-wide">
+                Super-Admin
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              Service provider mode: govern cross-university domain allowlists, seat limits, and monetization contracts.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] text-zinc-400 hidden md:inline">Campus Switcher:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="text-xs h-7 border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-medium"
+          >
+            <Link href="/dashboard">
+              <Building2 className="w-3.5 h-3.5 mr-1 text-indigo-400" />
+              Preview AUSE Campus View →
+            </Link>
+          </Button>
+        </div>
+      </div>
+
       {/* ─── Header ────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
         <div>
@@ -536,6 +573,16 @@ export function LicensingWorkspace() {
                   {/* Actions */}
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-[11px] h-7 px-2 text-indigo-400 hover:text-indigo-300"
+                      >
+                        <Link href="/dashboard">
+                          Preview Campus →
+                        </Link>
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

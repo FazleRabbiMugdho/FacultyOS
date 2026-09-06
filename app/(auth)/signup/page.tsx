@@ -592,6 +592,17 @@ export default function SignupPage() {
               </Link>
             </p>
 
+            {/* Platform Operator Gateway Notice */}
+            <div className="p-2.5 rounded-xl border border-purple-500/20 bg-purple-500/5 text-center text-[11.5px] text-zinc-400">
+              <span>Platform Developer or Service Provider? </span>
+              <Link
+                href="/login"
+                className="font-semibold text-purple-400 hover:text-purple-300 underline underline-offset-2"
+              >
+                Operator Portal Access →
+              </Link>
+            </div>
+
             {/* Trust footer */}
             <div
               className="auth-stagger-4 flex items-center justify-center gap-2 pt-3"

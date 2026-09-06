@@ -14,14 +14,22 @@ export default async function AppLayout({
   return (
     <div className="relative flex min-h-screen bg-background">
       {/* Persistent Left Sidebar */}
-      <Sidebar />
+      <Sidebar
+        accountType={profile?.account_type || "university_user"}
+        isSuperAdmin={profile?.is_super_admin || false}
+        institutionName={profile?.institution_name || "American University of Science & Engineering"}
+      />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-x-hidden">
         <TopBar
-          userEmail={user?.email || "faculty@university.edu"}
-          userName={profile?.full_name || "Faculty Member"}
+          userEmail={user?.email || (profile?.account_type === "service_provider" ? "admin@facultyos.io" : "faculty@ause.edu")}
+          userName={profile?.full_name || (profile?.account_type === "service_provider" ? "Platform Operator" : "Faculty Member")}
           userRole={profile?.role || "senior"}
+          accountType={profile?.account_type || "university_user"}
+          institutionName={profile?.institution_name || "American University of Science & Engineering"}
+          institutionTier={profile?.institution_tier || "Enterprise"}
+          isSuperAdmin={profile?.is_super_admin || false}
         />
         <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto animate-fade-in">
           {children}
