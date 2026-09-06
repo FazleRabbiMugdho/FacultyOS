@@ -10,26 +10,21 @@ import {
   FileQuestion,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
-  Layers,
   Scale,
   CalendarDays,
   Building2,
   Sparkles,
   ShieldCheck,
-  DollarSign,
   ExternalLink,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/shell/BrandLogo";
 
 interface NavItem {
   name: string;
   href: string;
   icon: any;
-  track: string;
-  trackBadge: string | null;
   description: string;
 }
 
@@ -38,40 +33,30 @@ const universityNavItems: NavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    track: "Overview",
-    trackBadge: null,
     description: "Academic lifecycle, accreditation status & quick actions",
   },
   {
     name: "Course Design",
     href: "/design",
     icon: Compass,
-    track: "Track A",
-    trackBadge: "OBE & RAG",
     description: "Syllabus, CO-PO Matrix & Exam Blueprint",
   },
   {
     name: "Question Authoring",
     href: "/questions",
     icon: FileQuestion,
-    track: "Track B",
-    trackBadge: "Dedup & Rubrics",
     description: "Blueprint generation, Dedup & Partial Credit",
   },
   {
     name: "Grading & Fairness",
     href: "/grading",
     icon: Scale,
-    track: "Track C",
-    trackBadge: "VLM & Double-Blind",
     description: "Multimodal grading, Arbitration & Reliability",
   },
   {
     name: "Course Routine",
     href: "/routine",
     icon: CalendarDays,
-    track: "Operations",
-    trackBadge: "Conflict-Safe",
     description: "Weekly instructor, room & cohort scheduling",
   },
 ];
@@ -81,33 +66,19 @@ const providerNavItems: NavItem[] = [
     name: "Licensing & Tenancy",
     href: "/admin/licensing",
     icon: Building2,
-    track: "Provider",
-    trackBadge: "Monetization",
     description: "Gated university domains, contracts & seat quotas",
   },
   {
     name: "University Tenants",
     href: "/admin/licensing#tenants",
     icon: ShieldCheck,
-    track: "Provider",
-    trackBadge: "Tenancy",
     description: "Active institutions, plan tiers & license status",
   },
   {
-    name: "ARR & Seat Quotas",
-    href: "/admin/licensing#analytics",
-    icon: DollarSign,
-    track: "Provider",
-    trackBadge: "Revenue",
-    description: "Contract values, seat capacity & recurring licenses",
-  },
-  {
-    name: "AI Gateway Health",
-    href: "/admin/licensing#gateway",
+    name: "Domain Gate Sandbox",
+    href: "/admin/licensing#sandbox",
     icon: Sparkles,
-    track: "Provider",
-    trackBadge: "Operational",
-    description: "Gemini 1.5 Pro, OpenRouter VLM routing & latency",
+    description: "Test faculty email validation against live domain allowlist",
   },
 ];
 
@@ -126,7 +97,14 @@ export function Sidebar({
   const [collapsed, setCollapsed] = React.useState(false);
 
   const isProvider = isSuperAdmin || accountType === "service_provider";
-  const visibleItems = isProvider ? providerNavItems : universityNavItems;
+  const isOnAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/provider");
+
+  // If on admin routes, show provider navigation. If navigating campus workspace, show university routes.
+  const visibleItems = isProvider
+    ? isOnAdminRoute
+      ? providerNavItems
+      : universityNavItems
+    : universityNavItems;
 
   return (
     <aside
@@ -138,7 +116,7 @@ export function Sidebar({
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-border/60">
         <Link
-          href={isProvider ? "/admin/licensing" : "/dashboard"}
+          href={isProvider && isOnAdminRoute ? "/admin/licensing" : "/dashboard"}
           className="group flex items-center gap-3 overflow-hidden press"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
@@ -146,17 +124,14 @@ export function Sidebar({
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base tracking-tight text-foreground">
-                  FacultyOS
-                </span>
-                <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
-                  IAPEA
-                </span>
-              </div>
+              <span className="font-bold text-base tracking-tight text-foreground">
+                FacultyOS
+              </span>
               <span className="text-[11px] text-muted-foreground truncate">
                 {isProvider
-                  ? "Platform Operator"
+                  ? isOnAdminRoute
+                    ? "Platform Operator"
+                    : "Simulated Campus View"
                   : "Campus Workspace"}
               </span>
             </div>
@@ -181,17 +156,16 @@ export function Sidebar({
       {/* Tenant Indicator Pill */}
       {!collapsed && (
         <div className="px-4 pt-3 pb-1">
-          {isProvider ? (
-            <div className="px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center justify-between text-[11px]">
-              <span className="font-semibold text-purple-300 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-purple-400" />
-                Service Provider Mode
+          {isProvider && isOnAdminRoute ? (
+            <div className="px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center gap-2 text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span className="font-semibold text-purple-300 truncate">
+                Platform Operator Console
               </span>
-              <span className="text-[10px] text-purple-400 font-mono">ROOT</span>
             </div>
           ) : (
-            <div className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-1.5 text-[11px]">
-              <Building2 className="w-3 h-3 text-indigo-400 shrink-0" />
+            <div className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-2 text-xs">
+              <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
               <span className="font-medium text-foreground truncate">
                 {institutionName}
               </span>
@@ -203,13 +177,19 @@ export function Sidebar({
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5">
         <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-          {!collapsed ? (isProvider ? "Platform Administration" : "Academic Lifecycle") : "•••"}
+          {!collapsed
+            ? isProvider && isOnAdminRoute
+              ? "Platform Administration"
+              : "Academic Lifecycle"
+            : "•••"}
         </div>
 
         {visibleItems.map((item, i) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && item.href !== "/admin/licensing" && pathname.startsWith(item.href));
+            (item.href !== "/dashboard" &&
+              item.href !== "/admin/licensing" &&
+              pathname.startsWith(item.href));
 
           return (
             <Link
@@ -230,51 +210,47 @@ export function Sidebar({
               <item.icon
                 className={cn(
                   "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"
+                  isActive
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground group-hover:text-primary"
                 )}
               />
 
               {!collapsed && (
                 <div className="flex flex-1 items-center justify-between overflow-hidden">
-                  <div className="flex flex-col truncate">
-                    <span className="truncate">{item.name}</span>
-                  </div>
-                  {item.trackBadge && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground group-hover:text-foreground font-mono">
-                      {item.trackBadge}
-                    </span>
-                  )}
+                  <span className="truncate">{item.name}</span>
                 </div>
               )}
             </Link>
           );
         })}
 
-        {/* For Service Providers: Optional Campus Simulator link */}
+        {/* For Service Providers: Switch between Operator Console and Campus View */}
         {isProvider && (
           <div className="pt-3 mt-3 border-t border-border/40">
-            <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              {!collapsed ? "Preview & QA" : "•••"}
-            </div>
-            <Link
-              href="/dashboard"
-              className={cn(
-                "reveal-sm press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200",
-                pathname === "/dashboard"
-                  ? "bg-accent text-foreground font-semibold"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              )}
-            >
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
-              {!collapsed && (
-                <div className="flex flex-1 items-center justify-between overflow-hidden">
+            {isOnAdminRoute ? (
+              <Link
+                href="/dashboard"
+                className="reveal-sm press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-all"
+              >
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+                {!collapsed && (
                   <span className="truncate">Simulate Campus View</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 font-mono">
-                    SIM
+                )}
+              </Link>
+            ) : (
+              <Link
+                href="/admin/licensing"
+                className="reveal-sm press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-purple-400 bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0 text-purple-400" />
+                {!collapsed && (
+                  <span className="truncate font-semibold">
+                    Return to Operator Console
                   </span>
-                </div>
-              )}
-            </Link>
+                )}
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -282,17 +258,13 @@ export function Sidebar({
       {/* Footer / System Status */}
       <div className="p-3 border-t border-border/60">
         {!collapsed ? (
-          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-1.5 backdrop-blur-sm">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="flex items-center gap-1.5 text-foreground">
-                <span className="status-ping inline-flex h-1.5 w-1.5 rounded-full text-emerald-500">
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                </span>
-                AI Gateway
+          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-1 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <Badge variant="success" className="text-[10px] px-1.5 py-0">
-                Online
-              </Badge>
+              <span>AI Gateway Online</span>
             </div>
             <p className="text-[11px] text-muted-foreground">
               Gemini 1.5 Pro + OpenRouter VLM

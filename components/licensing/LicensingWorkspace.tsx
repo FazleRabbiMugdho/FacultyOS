@@ -82,7 +82,7 @@ export function LicensingWorkspace() {
   const [formAcv, setFormAcv] = React.useState("36000");
 
   // Domain Sandbox tester state
-  const [testEmail, setTestEmail] = React.useState("dean@ause.edu");
+  const [testEmail, setTestEmail] = React.useState("dean@aust.edu");
   const [testResult, setTestResult] = React.useState<any>(null);
   const [testing, setTesting] = React.useState(false);
 
@@ -248,7 +248,7 @@ export function LicensingWorkspace() {
           >
             <Link href="/dashboard">
               <Building2 className="w-3.5 h-3.5 mr-1 text-indigo-400" />
-              Preview AUSE Campus View →
+              Preview AUST Campus View →
             </Link>
           </Button>
         </div>
@@ -335,7 +335,7 @@ export function LicensingWorkspace() {
               {activeDomainsCount}
             </span>
             <span className="text-xs text-indigo-400 font-mono">
-              e.g. @ause.edu
+              e.g. @aust.edu
             </span>
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">
@@ -424,7 +424,7 @@ export function LicensingWorkspace() {
       </div>
 
       {/* ─── Active Universities Table ──────────────────── */}
-      <div className="border border-border/60 rounded-xl overflow-hidden bg-card/40 backdrop-blur-sm">
+      <div id="tenants" className="scroll-mt-20 border border-border/60 rounded-xl overflow-hidden bg-card/40 backdrop-blur-sm">
         <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -628,7 +628,7 @@ export function LicensingWorkspace() {
       </div>
 
       {/* ─── Live Signup Gate Simulator Sandbox ─────────── */}
-      <div className="p-5 rounded-xl border border-indigo-500/20 bg-indigo-950/10 backdrop-blur-sm relative">
+      <div id="sandbox" className="scroll-mt-20 p-5 rounded-xl border border-indigo-500/20 bg-indigo-950/10 backdrop-blur-sm relative">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -648,7 +648,7 @@ export function LicensingWorkspace() {
               type="email"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="e.g. prof.smith@ause.edu"
+              placeholder="e.g. prof.smith@aust.edu"
               className="flex-1 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
             />
             <Button
@@ -746,7 +746,7 @@ export function LicensingWorkspace() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. American University of Science & Engineering"
+                  placeholder="e.g. Ahsanullah University of Science and Technology"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -765,7 +765,7 @@ export function LicensingWorkspace() {
                     <input
                       type="text"
                       required
-                      placeholder="ause.edu"
+                      placeholder="aust.edu"
                       value={formDomain}
                       onChange={(e) => setFormDomain(e.target.value)}
                       className="w-full pl-7 pr-3 py-2 rounded-lg border border-border/60 bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
@@ -825,7 +825,7 @@ export function LicensingWorkspace() {
                   </label>
                   <input
                     type="email"
-                    placeholder="provost@ause.edu"
+                    placeholder="provost@aust.edu"
                     value={formContact}
                     onChange={(e) => setFormContact(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
