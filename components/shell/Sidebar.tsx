@@ -16,6 +16,7 @@ import {
   Layers,
   Scale,
   CalendarDays,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +60,14 @@ const navigationItems = [
     track: "Operations",
     trackBadge: "Conflict-Safe",
     description: "Weekly instructor, room & cohort scheduling",
+  },
+  {
+    name: "Licensing & Domains",
+    href: "/admin/licensing",
+    icon: Building2,
+    track: "Provider",
+    trackBadge: "Monetization",
+    description: "Gated university domains, contracts & seat quotas",
   },
 ];
 

@@ -26,7 +26,22 @@ import {
   Users,
   Award,
   Settings,
+  Building2,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
 } from "lucide-react";
+
+/* ─── Helpers ────────────────────────────────────────────────── */
+function formatActiveSince(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
 
 /* ─── Data ───────────────────────────────────────────────────── */
 const ROLE_DEFINITIONS = [
@@ -67,8 +82,75 @@ export default function SignupPage() {
   const [loading, setLoading] = React.useState(false);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
 
+  // Live domain license verification state
+  const [domainStatus, setDomainStatus] = React.useState<{
+    checking: boolean;
+    allowed: boolean | null;
+    domain: string;
+    institution?: {
+      name: string;
+      tier: string;
+      active_from: string;
+      seats_remaining: number;
+    };
+    reason?: string;
+  } | null>(null);
+
+  // Debounced domain verification
+  React.useEffect(() => {
+    if (!email || !email.includes("@") || !email.includes(".")) {
+      setDomainStatus(null);
+      return;
+    }
+
+    const domainPart = email.split("@")[1]?.trim();
+    if (!domainPart || !domainPart.includes(".")) {
+      setDomainStatus(null);
+      return;
+    }
+
+    setDomainStatus((prev) => ({
+      checking: true,
+      allowed: prev?.domain === domainPart ? prev.allowed : null,
+      domain: domainPart,
+      institution: prev?.domain === domainPart ? prev.institution : undefined,
+    }));
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/auth/verify-domain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        setDomainStatus({
+          checking: false,
+          allowed: Boolean(data.allowed),
+          domain: data.domain || domainPart,
+          institution: data.institution,
+          reason: data.reason,
+        });
+      } catch {
+        setDomainStatus({
+          checking: false,
+          allowed: false,
+          domain: domainPart,
+          reason: "Unable to verify domain license at this moment.",
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (domainStatus && domainStatus.allowed === false) {
+      toast.error(domainStatus.reason || "This university domain is not licensed for FacultyOS.");
+      return;
+    }
+
     setLoading(true);
     try {
       const supabase = createClient();
@@ -302,9 +384,14 @@ export default function SignupPage() {
 
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
-                  University email
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email" className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
+                    University email
+                  </Label>
+                  <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    Gated institutional domain
+                  </span>
+                </div>
                 <div className="relative">
                   <Mail
                     className="h-[15px] w-[15px] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -323,6 +410,73 @@ export default function SignupPage() {
                       bg-white text-zinc-900 border-zinc-200 placeholder-zinc-400
                       dark:bg-[#141418] dark:text-white dark:border-white/10 dark:placeholder-zinc-600"
                   />
+                </div>
+
+                {/* Live Domain Verification Banner */}
+                {domainStatus && (
+                  <div className="transition-all duration-200 pt-0.5">
+                    {domainStatus.checking ? (
+                      <div className="flex items-center gap-1.5 text-[11.5px] text-indigo-400 py-1 pl-1">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+                        <span>Verifying institutional license for @{domainStatus.domain}…</span>
+                      </div>
+                    ) : domainStatus.allowed === true && domainStatus.institution ? (
+                      <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[11.5px] space-y-1">
+                        <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>Active Academic License</span>
+                        </div>
+                        <div className="font-medium text-white pl-5">
+                          {domainStatus.institution.name}
+                        </div>
+                        <div className="text-[10.5px] text-emerald-200/80 pl-5 flex items-center gap-2">
+                          <span>Active since {formatActiveSince(domainStatus.institution.active_from)}</span>
+                          <span>•</span>
+                          <span className="uppercase font-semibold text-emerald-300">
+                            {domainStatus.institution.tier} Tier
+                          </span>
+                        </div>
+                      </div>
+                    ) : domainStatus.allowed === false ? (
+                      <div className="p-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[11.5px] space-y-1">
+                        <div className="flex items-center gap-1.5 font-semibold text-rose-400">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Institutional License Required</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-300 leading-snug pl-5">
+                          {domainStatus.reason ||
+                            `Domain @${domainStatus.domain} is not currently authorized for FacultyOS registration.`}
+                        </p>
+                        <div className="pl-5 pt-0.5">
+                          <Link
+                            href="/admin/licensing"
+                            className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2"
+                          >
+                            <span>Platform Provider: Add domain @{domainStatus.domain} →</span>
+                          </Link>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Quick Test Chips for Demonstration */}
+                <div className="flex items-center gap-1.5 pt-1 text-[10.5px] text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[10px] uppercase font-semibold text-zinc-400">Demo:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEmail("prof.smith@ause.edu")}
+                    className="px-1.5 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-mono text-[10.5px] transition-colors border border-emerald-500/20"
+                  >
+                    prof@ause.edu (Licensed)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmail("user@gmail.com")}
+                    className="px-1.5 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-mono text-[10.5px] transition-colors border border-rose-500/20"
+                  >
+                    user@gmail.com (Blocked)
+                  </button>
                 </div>
               </div>
 
@@ -395,14 +549,27 @@ export default function SignupPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
-                className="submit-btn w-full h-[42px] flex items-center justify-center gap-2 text-[13.5px] font-semibold rounded-xl text-white mt-1 disabled:opacity-55 disabled:cursor-not-allowed"
-                style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" }}
+                disabled={loading || domainStatus?.allowed === false}
+                className={`submit-btn w-full h-[42px] flex items-center justify-center gap-2 text-[13.5px] font-semibold rounded-xl text-white mt-1 transition-all ${
+                  domainStatus?.allowed === false
+                    ? "opacity-50 cursor-not-allowed bg-zinc-700 hover:transform-none"
+                    : "disabled:opacity-55 disabled:cursor-not-allowed"
+                }`}
+                style={
+                  domainStatus?.allowed === false
+                    ? { background: "#3f3f46" }
+                    : { background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" }
+                }
               >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Creating account…</span>
+                  </>
+                ) : domainStatus?.allowed === false ? (
+                  <>
+                    <Lock className="h-4 w-4 text-zinc-400" />
+                    <span>Institutional License Required</span>
                   </>
                 ) : (
                   <>
