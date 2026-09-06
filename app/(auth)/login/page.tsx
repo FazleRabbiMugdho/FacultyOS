@@ -4,38 +4,92 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { GraduationCap, ArrowRight, Sparkles, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import {
+  GraduationCap,
+  ArrowRight,
+  ShieldCheck,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Loader2,
+  BookOpen,
+  FileCheck,
+  BarChart3,
+} from "lucide-react";
 
+/* ─── Data ─────────────────────────────────────────────────────── */
+const FEATURES = [
+  {
+    icon: BookOpen,
+    title: "Outcome-Based Course Design",
+    desc: "Bloom's taxonomy mapping, CO–PO sparsity enforcement, and taught-vs-planned drift detection.",
+  },
+  {
+    icon: FileCheck,
+    title: "Triple-Layer Deduplication",
+    desc: "Cosine + Jaccard + Skill-Signature detection catches conceptual duplicates across all historical papers.",
+  },
+  {
+    icon: BarChart3,
+    title: "Double-Blind Grading & Arbitration",
+    desc: "VLM-powered script evaluation with per-region confidence routing and Δ discrepancy arbitration.",
+  },
+];
+
+const DEMO_ROLES = [
+  {
+    label: "Junior Faculty",
+    role: "Examiner · E1",
+    email: "junior@facultyos.edu",
+    accent: "#3b82f6",
+    dotClass: "bg-blue-500",
+    selectedClass: "border-blue-500/50 bg-blue-500/5",
+  },
+  {
+    label: "Senior Faculty",
+    role: "Arbitrator · E2/E3",
+    email: "senior@facultyos.edu",
+    accent: "#f59e0b",
+    dotClass: "bg-amber-500",
+    selectedClass: "border-amber-500/50 bg-amber-500/5",
+  },
+  {
+    label: "Dean / Admin",
+    role: "Program Chair",
+    email: "admin@facultyos.edu",
+    accent: "#8b5cf6",
+    dotClass: "bg-violet-500",
+    selectedClass: "border-violet-500/50 bg-violet-500/5",
+  },
+];
+
+const METRICS = [
+  { value: "99.4%", label: "Grading Reliability" },
+  { value: "768-d", label: "Semantic Vectors" },
+  { value: "FERPA", label: "Anonymized" },
+];
+
+/* ─── Component ─────────────────────────────────────────────────── */
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [selectedRole, setSelectedRole] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [focusedField, setFocusedField] = React.useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const supabase = createClient();
-      let { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      let { error } = await supabase.auth.signInWithPassword({ email, password });
 
-      // If invalid credentials on a demo email, auto-create and sign in
       if (error && email.endsWith("@facultyos.edu")) {
         const role = email.split("@")[0] as "junior" | "senior" | "admin";
         const { error: signUpError } = await supabase.auth.signUp({
@@ -44,23 +98,18 @@ export default function LoginPage() {
           options: {
             data: {
               full_name: `${role.charAt(0).toUpperCase() + role.slice(1)} Faculty`,
-              role: role || "junior",
+              role,
             },
           },
         });
-
         if (!signUpError) {
           const res = await supabase.auth.signInWithPassword({ email, password });
           error = res.error;
         }
       }
 
-      if (error) {
-        toast.error(error.message || "Failed to sign in");
-        return;
-      }
-
-      toast.success("Signed in successfully!");
+      if (error) { toast.error(error.message || "Failed to sign in"); return; }
+      toast.success("Welcome back.");
       router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
@@ -70,131 +119,403 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (role: "junior" | "senior" | "admin") => {
-    setEmail(`${role}@facultyos.edu`);
+  const handleDemoLogin = (role: (typeof DEMO_ROLES)[number]) => {
+    setSelectedRole(role.email);
+    setEmail(role.email);
     setPassword("DemoFaculty123!");
-    toast.info(`Pre-filled ${role.toUpperCase()} credentials`);
+    toast.info(`${role.label} credentials loaded`);
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Ambient background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-70" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl opacity-70" />
-      </div>
+    <>
+      {/* Page-level styles for elements that can't easily be expressed with Tailwind alone */}
+      <style>{`
+        .field-input:focus {
+          border-color: #6366f1 !important;
+          box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+        .submit-btn:not(:disabled):hover {
+          box-shadow: 0 8px 24px -4px rgba(99,102,241,0.45);
+          transform: translateY(-1px);
+        }
+        .submit-btn:not(:disabled):active {
+          transform: translateY(0);
+          box-shadow: none;
+        }
+        .submit-btn { transition: all 0.18s cubic-bezier(0.22,1,0.36,1); }
+        .role-btn { transition: all 0.15s cubic-bezier(0.22,1,0.36,1); }
+        .role-btn:hover:not(.role-selected) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .feature-row { transition: transform 0.2s ease; }
+        .feature-row:hover { transform: translateX(4px); }
+        .left-panel-border {
+          background: linear-gradient(to bottom, #6366f1, #4f46e5 40%, transparent);
+        }
+      `}</style>
 
-      <div className="relative w-full max-w-md animate-fade-in">
-        {/* Brand Header */}
-        <div className="mb-8 text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 mb-2">
-            <GraduationCap className="h-6 w-6" />
+      <div className="min-h-screen flex bg-white dark:bg-[#0d0d10]">
+
+        {/* ══════════════════════════════════════════════════════
+            LEFT PANEL — Institutional brand showcase
+        ══════════════════════════════════════════════════════ */}
+        <div
+          className="auth-left-panel hidden lg:flex w-[54%] xl:w-[56%] flex-col relative overflow-hidden"
+          style={{ background: "linear-gradient(145deg, #09090d 0%, #0f0f1a 60%, #0a0a14 100%)" }}
+        >
+          {/* Left edge accent bar */}
+          <div
+            className="left-panel-border absolute top-0 left-0 bottom-0 w-[3px] opacity-70"
+          />
+
+          {/* Right divider */}
+          <div className="absolute top-0 right-0 bottom-0 w-px"
+            style={{ background: "linear-gradient(to bottom, transparent, rgba(99,102,241,0.15) 20%, rgba(99,102,241,0.08) 80%, transparent)" }}
+          />
+
+          {/* Subtle noise / grain texture */}
+          <div
+            className="absolute inset-0 opacity-[0.022]"
+            style={{
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
+              backgroundSize: "180px 180px",
+            }}
+          />
+
+          {/* Faint grid */}
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage: "linear-gradient(rgba(99,102,241,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.5) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+              maskImage: "radial-gradient(ellipse 80% 70% at 50% 50%, black 40%, transparent 100%)",
+            }}
+          />
+
+          <div className="relative flex flex-col h-full px-14 xl:px-16 py-11 xl:py-13">
+
+            {/* Logo */}
+            <div className="auth-stagger-1 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
+                <GraduationCap className="h-[18px] w-[18px] text-white" />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[15px] font-semibold tracking-tight text-white">FacultyOS</span>
+                <span
+                  className="text-[10px] font-mono tracking-wider px-1.5 py-0.5 rounded"
+                  style={{ color: "#818cf8", border: "1px solid rgba(99,102,241,0.3)", background: "rgba(99,102,241,0.08)" }}
+                >
+                  IAPEA
+                </span>
+              </div>
+            </div>
+
+            {/* Main hero */}
+            <div className="my-auto space-y-9">
+              {/* Eyebrow + heading */}
+              <div className="auth-stagger-2 space-y-4">
+                <p
+                  className="text-[10.5px] font-semibold uppercase tracking-[0.2em]"
+                  style={{ color: "#6366f1" }}
+                >
+                  Intelligent Academic Processing & Evaluation Architecture
+                </p>
+                <h1
+                  className="font-bold leading-[1.12] tracking-tight"
+                  style={{
+                    fontSize: "clamp(2rem, 3.2vw, 2.9rem)",
+                    color: "#f1f5f9",
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  Where rigorous<br />
+                  academic standards<br />
+                  <span style={{ color: "#c7d2fe" }}>meet modern tooling.</span>
+                </h1>
+                <p
+                  className="text-[14px] leading-[1.7] max-w-[390px]"
+                  style={{ color: "#64748b" }}
+                >
+                  A unified platform for outcome-based course design, collision-proof
+                  question authoring, and double-blind grading — built for institutional accountability.
+                </p>
+              </div>
+
+              {/* Feature list */}
+              <div className="auth-stagger-3 space-y-[1px]">
+                {/* Animated line separator */}
+                <div
+                  className="auth-line-grow h-px mb-5"
+                  style={{ background: "linear-gradient(to right, rgba(99,102,241,0.4), transparent)" }}
+                />
+                <div className="space-y-4">
+                  {FEATURES.map((f, i) => (
+                    <div key={i} className="feature-row flex gap-4 items-start group">
+                      <div
+                        className="mt-0.5 p-1.5 rounded-md shrink-0"
+                        style={{ background: "rgba(99,102,241,0.1)", color: "#818cf8" }}
+                      >
+                        <f.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-[13.5px] font-semibold text-white/90 leading-snug">
+                          {f.title}
+                        </p>
+                        <p className="text-[12px] leading-[1.65] mt-0.5" style={{ color: "#475569" }}>
+                          {f.desc}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom metrics */}
+            <div
+              className="auth-stagger-4 pt-6 mt-auto"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <div className="flex items-center gap-8">
+                {METRICS.map((m, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <div className="h-8 w-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                    )}
+                    <div className="metric-item">
+                      <p
+                        className="text-[19px] font-bold tabular-nums tracking-tight"
+                        style={{ color: "#e2e8f0" }}
+                      >
+                        {m.value}
+                      </p>
+                      <p className="text-[11px] mt-0.5" style={{ color: "#475569" }}>{m.label}</p>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            FacultyOS <span className="text-xs font-normal text-primary border border-primary/30 rounded-full px-2 py-0.5 ml-1">IAPEA</span>
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Intelligent Academic Processing & Evaluation Architecture
-          </p>
         </div>
 
-        {/* Login Card with Light Glassmorphism */}
-        <Card className="glass-panel border-border/80 shadow-2xl backdrop-blur-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl">Sign in to your portal</CardTitle>
-            <CardDescription>
-              Enter your university credentials to access the academic co-pilot
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">University Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="faculty@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+        {/* ══════════════════════════════════════════════════════
+            RIGHT PANEL — Authentication form
+        ══════════════════════════════════════════════════════ */}
+        <div className="auth-right-panel flex-1 flex flex-col justify-center items-center px-8 sm:px-12 py-14 bg-white dark:bg-[#0d0d10] relative">
+
+          {/* Very subtle radial bg wash for depth */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.04) 0%, transparent 100%)",
+            }}
+          />
+
+          {/* Mobile logo */}
+          <div className="lg:hidden absolute top-6 left-6 flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}>
+              <GraduationCap className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-[14px] font-semibold text-zinc-900 dark:text-white tracking-tight">FacultyOS</span>
+          </div>
+
+          <div className="relative w-full max-w-[360px] space-y-7">
+
+            {/* Heading block */}
+            <div className="auth-stagger-1 space-y-1.5">
+              <h2
+                className="font-bold tracking-tight text-zinc-900 dark:text-white"
+                style={{ fontSize: "26px", letterSpacing: "-0.025em" }}
+              >
+                Sign in
+              </h2>
+              <p className="text-[13.5px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                Use your institutional email to continue.
+              </p>
+            </div>
+
+            {/* Demo role selector */}
+            <div className="auth-stagger-2 space-y-2.5">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: "#94a3b8" }}
+              >
+                Quick demo access
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {DEMO_ROLES.map((r) => {
+                  const isSelected = selectedRole === r.email;
+                  return (
+                    <button
+                      key={r.email}
+                      type="button"
+                      onClick={() => handleDemoLogin(r)}
+                      className={`role-btn ${isSelected ? "role-selected" : ""} flex flex-col gap-1.5 p-3 rounded-xl border text-left outline-none`}
+                      style={{
+                        background: isSelected ? `${r.accent}08` : "transparent",
+                        borderColor: isSelected ? `${r.accent}50` : "rgba(226,232,240,1)",
+                        boxShadow: isSelected ? `0 0 0 1px ${r.accent}30` : "none",
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full shrink-0"
+                          style={{ background: r.accent }}
+                        />
+                        <span className="text-[11.5px] font-semibold text-zinc-800 dark:text-zinc-200 leading-none">
+                          {r.label}
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] leading-tight pl-3" style={{ color: "#94a3b8" }}>
+                        {r.role}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+
+            {/* Divider */}
+            <div className="auth-stagger-3 flex items-center gap-3">
+              <div className="flex-1 h-px bg-zinc-100 dark:bg-white/[0.06]" />
+              <span className="text-[11px] text-zinc-400 dark:text-zinc-600 whitespace-nowrap">
+                or sign in with email
+              </span>
+              <div className="flex-1 h-px bg-zinc-100 dark:bg-white/[0.06]" />
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="auth-stagger-4 space-y-4">
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400"
+                >
+                  Email address
+                </Label>
+                <div className="relative">
+                  <Mail
+                    className="h-[15px] w-[15px] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: focusedField === "email" ? "#6366f1" : "#94a3b8", transition: "color 0.15s" }}
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="you@university.edu"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setSelectedRole(null); }}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    className="field-input w-full h-[42px] pl-[38px] pr-3.5 text-[13.5px] rounded-xl border outline-none transition-all duration-150
+                      bg-white text-zinc-900 border-zinc-200 placeholder-zinc-400
+                      dark:bg-[#141418] dark:text-white dark:border-white/10 dark:placeholder-zinc-600"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <span className="text-xs text-muted-foreground hover:text-primary cursor-pointer">
+                  <Label
+                    htmlFor="password"
+                    className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Password
+                  </Label>
+                  <button
+                    type="button"
+                    className="text-[11.5px] font-medium transition-colors duration-150"
+                    style={{ color: "#6366f1" }}
+                    onMouseOver={(e) => (e.currentTarget.style.color = "#4f46e5")}
+                    onMouseOut={(e) => (e.currentTarget.style.color = "#6366f1")}
+                  >
                     Forgot password?
-                  </span>
+                  </button>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Demo Role Fast-Fill Buttons */}
-              <div className="pt-2 border-t border-border/60">
-                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  Quick Demo Accounts
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
+                <div className="relative">
+                  <Lock
+                    className="h-[15px] w-[15px] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: focusedField === "password" ? "#6366f1" : "#94a3b8", transition: "color 0.15s" }}
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    className="field-input w-full h-[42px] pl-[38px] pr-10 rounded-xl border outline-none transition-all duration-150 font-mono tracking-[0.18em]
+                      bg-white text-zinc-900 border-zinc-200 placeholder-zinc-400
+                      dark:bg-[#141418] dark:text-white dark:border-white/10 dark:placeholder-zinc-600"
+                    style={{ fontSize: "13.5px", letterSpacing: password ? "0.18em" : "normal" }}
+                  />
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-8"
-                    onClick={() => handleDemoLogin("junior")}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors duration-150"
+                    style={{ color: "#94a3b8" }}
+                    onMouseOver={(e) => (e.currentTarget.style.color = "#6366f1")}
+                    onMouseOut={(e) => (e.currentTarget.style.color = "#94a3b8")}
                   >
-                    Junior (E1)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-8"
-                    onClick={() => handleDemoLogin("senior")}
-                  >
-                    Senior (E2/E3)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-8"
-                    onClick={() => handleDemoLogin("admin")}
-                  >
-                    Admin
-                  </Button>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
 
-              <div className="text-center text-xs text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link href="/signup" className="text-primary font-medium hover:underline">
-                  Register here
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="submit-btn w-full h-[42px] flex items-center justify-center gap-2 text-[13.5px] font-semibold rounded-xl text-white mt-1 disabled:opacity-55 disabled:cursor-not-allowed"
+                style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Signing in…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign in to FacultyOS</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
 
-        {/* Security badge */}
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-emerald-500" />
-          <span>RLS & Double-Blind Security Enforced</span>
+            {/* Register link */}
+            <p className="auth-stagger-5 text-center text-[12.5px] text-zinc-500 dark:text-zinc-400">
+              New to FacultyOS?{" "}
+              <Link
+                href="/signup"
+                className="font-semibold transition-colors duration-150"
+                style={{ color: "#6366f1" }}
+              >
+                Create an account
+              </Link>
+            </p>
+
+            {/* Trust footer */}
+            <div
+              className="auth-stagger-6 flex items-center justify-center gap-2 pt-3"
+              style={{ borderTop: "1px solid rgba(226,232,240,0.6)" }}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: "#10b981" }} />
+              <span className="text-[11px]" style={{ color: "#94a3b8" }}>
+                FERPA-compliant · Double-blind grading protocol
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
