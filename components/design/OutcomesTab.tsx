@@ -67,6 +67,7 @@ Module 4: Intractability & Approximation
 
 export function OutcomesTab({ course }: OutcomesTabProps) {
   const [outcomes, setOutcomes] = React.useState<CourseOutcome[]>([]);
+  const [performance, setPerformance] = React.useState<Record<string, any>>({});
   const [loading, setLoading] = React.useState(true);
   const [generating, setGenerating] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -93,6 +94,11 @@ export function OutcomesTab({ course }: OutcomesTabProps) {
         throw new Error(data.error || "Failed to fetch outcomes");
       }
       setOutcomes(data.outcomes || []);
+      const feedbackRes = await fetch(`/api/design/co-feedback?course_id=${course.id}`, { method: "POST" });
+      if (feedbackRes.ok) {
+        const feedback = await feedbackRes.json();
+        setPerformance(Object.fromEntries((feedback.performance || []).map((item: any) => [item.co_id, item])));
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to load course outcomes");
@@ -618,6 +624,7 @@ export function OutcomesTab({ course }: OutcomesTabProps) {
               <OutcomeCard
                 key={outcome.id}
                 outcome={outcome}
+                performance={performance[outcome.id]}
                 onUpdate={(updated) => {
                   setOutcomes((prev) =>
                     prev.map((o) => (o.id === updated.id ? updated : o))

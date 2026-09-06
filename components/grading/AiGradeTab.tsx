@@ -12,10 +12,12 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { GradingQuestion } from "./types";
 
-interface AiGradeTabProps { questions: GradingQuestion[]; onComplete: () => void; }
+interface AiGradeTabProps { questions: GradingQuestion[]; onComplete: () => void; initialQuestionId?: string | null; }
 
-export function AiGradeTab({ questions, onComplete }: AiGradeTabProps) {
-  const [questionId, setQuestionId] = React.useState(questions[0]?.id ?? "");
+export function AiGradeTab({ questions, onComplete, initialQuestionId }: AiGradeTabProps) {
+  const [questionId, setQuestionId] = React.useState(
+    questions.some((item) => item.id === initialQuestionId) ? initialQuestionId! : questions[0]?.id ?? ""
+  );
   const [maskedId, setMaskedId] = React.useState(`STU-${Math.floor(1000 + Math.random() * 9000)}`);
   const [file, setFile] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState("");

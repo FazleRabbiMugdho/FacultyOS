@@ -539,7 +539,9 @@ export function RubricsTab({ initialQuestions = [] }: RubricsTabProps) {
                 </div>
               </div>
 
-              <Link href="/grading">
+              <Link
+                href={`/grading?question_id=${encodeURIComponent(selectedQuestion?.id || "")}&rubric_id=${encodeURIComponent(rubric.id || "")}`}
+              >
                 <Button size="sm" className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
                   Grade in Track C
                   <ArrowRight className="h-3.5 w-3.5" />
