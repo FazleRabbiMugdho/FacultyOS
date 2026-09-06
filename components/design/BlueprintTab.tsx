@@ -51,6 +51,14 @@ import {
   Database,
   Calendar,
   Zap,
+  FileUp,
+  Image as ImageIcon,
+  Presentation,
+  FileQuestion,
+  X,
+  Check,
+  Eye,
+  FileCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -80,8 +88,14 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
   const [mode, setMode] = React.useState<"planned" | "drift_aware">("drift_aware");
   const [isUploadOpen, setIsUploadOpen] = React.useState(false);
 
-  // Manual Document Upload Form
-  const [docType, setDocType] = React.useState<"slides" | "past_paper">("slides");
+  // Document Ingestion States (Supports PDF, Images, Slides, and Text)
+  const [docSource, setDocSource] = React.useState<"file" | "text">("file");
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [extractingFile, setExtractingFile] = React.useState(false);
+  const [dragActive, setDragActive] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [docType, setDocType] = React.useState<"slides" | "past_paper" | "syllabus">("slides");
   const [docContent, setDocContent] = React.useState("");
   const [docPlannedDate, setDocPlannedDate] = React.useState("2026-09-01");
   const [docTaughtDate, setDocTaughtDate] = React.useState("2026-09-02");
@@ -183,35 +197,150 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
     }
   };
 
-  // Manual Document Ingestion
+  // Process uploaded file (PDF, Image, Slides, Notes)
+  const processUploadedFile = async (file: File) => {
+    setSelectedFile(file);
+    setExtractingFile(true);
+
+    // Auto-detect doc type from filename
+    const lowerName = file.name.toLowerCase();
+    if (
+      lowerName.includes("exam") ||
+      lowerName.includes("paper") ||
+      lowerName.includes("quiz") ||
+      lowerName.includes("midterm") ||
+      lowerName.includes("final") ||
+      lowerName.includes("test")
+    ) {
+      setDocType("past_paper");
+    } else if (
+      lowerName.includes("syllabus") ||
+      lowerName.includes("curriculum") ||
+      lowerName.includes("outline")
+    ) {
+      setDocType("syllabus");
+    } else {
+      setDocType("slides");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("course_id", course.id);
+
+    try {
+      const res = await fetch("/api/design/syllabus-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to extract text from file");
+      }
+
+      if (data.extractedText) {
+        setDocContent(data.extractedText);
+        toast.success(`Extracted content from "${file.name}"!`, {
+          description: "Gemini 1.5 Flash extracted academic topics & formulas. Review or edit below before embedding.",
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to extract document text via AI");
+    } finally {
+      setExtractingFile(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    setDocContent("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Document Ingestion (Handles both File and Raw Text)
   const handleIngestDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docContent.trim()) {
-      toast.error("Please enter document content");
+    if (!docContent.trim() && !selectedFile) {
+      toast.error("Please select a file or enter document content");
       return;
     }
 
     setUploadingDoc(true);
     try {
-      const res = await fetch("/api/design/ingest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          course_id: course.id,
-          type: docType,
-          content: docContent.trim(),
-          planned_at: docPlannedDate,
-          taught_at: isSkipped ? null : docTaughtDate,
-        }),
-      });
+      let res: Response;
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("course_id", course.id);
+        formData.append("type", docType);
+        formData.append("content", docContent.trim());
+        formData.append("planned_at", docPlannedDate);
+        if (!isSkipped && docTaughtDate) {
+          formData.append("taught_at", docTaughtDate);
+        }
+
+        res = await fetch("/api/design/ingest", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetch("/api/design/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            course_id: course.id,
+            type: docType,
+            content: docContent.trim(),
+            planned_at: docPlannedDate,
+            taught_at: isSkipped ? null : docTaughtDate,
+          }),
+        });
+      }
 
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to ingest document");
       }
 
-      toast.success(`Ingested & embedded document (${data.chunks_embedded} chunks)!`);
+      toast.success(`Ingested & embedded document (${data.chunks_embedded} pgvector chunks)!`);
       setDocContent("");
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setIsUploadOpen(false);
       await fetchBlueprintData();
     } catch (err: any) {
@@ -267,7 +396,7 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Ingested course slides, past papers, and syllabi are embedded (768-dim) and tracked by delivery dates for drift synthesis.
+                Upload lecture slides (PDF/images), past papers, or syllabi. Transcribed text is chunked and embedded (768-dim) to calculate instructional drift.
               </p>
             </div>
 
@@ -289,23 +418,57 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
 
               <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="secondary" className="rounded-xl text-xs gap-1.5">
+                  <Button size="sm" variant="secondary" className="rounded-xl text-xs gap-1.5 shadow-xs">
                     <Upload className="h-3.5 w-3.5" />
                     Ingest Document
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[520px] rounded-2xl border-border/80 glass-panel">
-                  <form onSubmit={handleIngestDocument}>
+                <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto rounded-3xl border-border/80 glass-panel p-6">
+                  <form onSubmit={handleIngestDocument} className="space-y-4">
                     <DialogHeader>
-                      <DialogTitle className="text-lg font-bold">
-                        Ingest Lecture Material
+                      <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <FileUp className="h-4 w-4" />
+                        </span>
+                        Ingest Lecture Material & Past Papers
                       </DialogTitle>
                       <DialogDescription className="text-xs text-muted-foreground">
-                        Embed notes/slides into pgvector and record delivery schedule for drift detection.
+                        Upload PDF slides, slide images, past papers, or text notes to generate 768-dim embeddings for RAG drift synthesis.
                       </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-3">
+                    {/* Source Tab Switcher */}
+                    <div className="flex items-center gap-2 p-1 bg-muted/60 rounded-xl border border-border/50 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setDocSource("file")}
+                        className={cn(
+                          "flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5",
+                          docSource === "file"
+                            ? "bg-background text-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        Upload PDF / Image / Slides
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDocSource("text")}
+                        className={cn(
+                          "flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5",
+                          docSource === "text"
+                            ? "bg-background text-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Paste Raw Text
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 py-1">
+                      {/* Document Meta Configuration */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label className="text-xs font-semibold">Document Type</Label>
@@ -313,12 +476,13 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
                             value={docType}
                             onValueChange={(v: any) => setDocType(v)}
                           >
-                            <SelectTrigger className="rounded-xl">
+                            <SelectTrigger className="rounded-xl text-xs">
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                              <SelectItem value="slides">Lecture Slides</SelectItem>
-                              <SelectItem value="past_paper">Past Exam Paper</SelectItem>
+                              <SelectItem value="slides">Lecture Slides / Presentation</SelectItem>
+                              <SelectItem value="past_paper">Past Exam Paper / Questions</SelectItem>
+                              <SelectItem value="syllabus">Syllabus / Notes</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -334,9 +498,10 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
                         </div>
                       </div>
 
-                      <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3">
+                      {/* Delivery Status */}
+                      <div className="space-y-2 rounded-2xl border border-border/60 bg-muted/20 p-3">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-semibold">Delivery Status</Label>
+                          <Label className="text-xs font-semibold">Delivery & Taught Status</Label>
                           <label className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium cursor-pointer">
                             <input
                               type="checkbox"
@@ -362,40 +527,154 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
                         )}
                       </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Content Text</Label>
+                      {/* File Upload Zone */}
+                      {docSource === "file" && (
+                        <div className="space-y-3">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.webp,.ppt,.pptx,.txt,.md,.doc,.docx"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+
+                          {!selectedFile ? (
+                            <div
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                              onClick={() => fileInputRef.current?.click()}
+                              className={cn(
+                                "flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 text-center gap-2",
+                                dragActive
+                                  ? "border-primary bg-primary/5 scale-[0.99]"
+                                  : "border-border/80 hover:border-primary/60 hover:bg-muted/30"
+                              )}
+                            >
+                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <Upload className="h-6 w-6" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-xs font-bold text-foreground">
+                                  Drop your Lecture PDF, Slide images, or Past Paper
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Supports PDF, PNG, JPG, WEBP, PPTX, or Markdown (Max 30MB)
+                                </p>
+                              </div>
+                              <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-medium text-secondary-foreground mt-1">
+                                Browse from Computer
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                                  {selectedFile.type.includes("pdf") ? (
+                                    <FileText className="h-5 w-5" />
+                                  ) : selectedFile.type.includes("image") ? (
+                                    <ImageIcon className="h-5 w-5" />
+                                  ) : (
+                                    <Presentation className="h-5 w-5" />
+                                  )}
+                                </div>
+                                <div className="overflow-hidden">
+                                  <p className="text-xs font-semibold text-foreground truncate">
+                                    {selectedFile.name}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {(selectedFile.size / 1024).toFixed(1)} KB · {extractingFile ? "Extracting..." : "Extracted"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {extractingFile ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    AI Extracting...
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                    <Check className="h-3.5 w-3.5" />
+                                    Ready
+                                  </span>
+                                )}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={handleClearFile}
+                                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {extractingFile && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+                              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                              <span>
+                                <strong>Gemini 1.5 Flash</strong> is reading your document, transcribing formulas, diagrams, and lecture points...
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Content Preview & Editor */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-semibold">
+                            {docSource === "file" ? "Extracted Content Preview (Editable)" : "Lecture Content Text"}
+                          </Label>
+                          {docContent && (
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {docContent.length} chars · ~{Math.ceil(docContent.split(/\s+/).length / 350)} vector chunks
+                            </span>
+                          )}
+                        </div>
                         <Textarea
-                          rows={4}
-                          placeholder="Paste lecture text, key definitions, formulas, or slide points..."
+                          rows={docSource === "file" ? 4 : 5}
+                          placeholder={
+                            docSource === "file"
+                              ? "Extracted text will automatically appear here once file is selected. You can review or edit before embedding."
+                              : "Paste lecture notes, slide bullet points, algorithm definitions, or past exam questions..."
+                          }
                           value={docContent}
                           onChange={(e) => setDocContent(e.target.value)}
-                          className="rounded-xl text-xs"
+                          className="rounded-2xl text-xs font-mono leading-relaxed"
                           required
                         />
                       </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="gap-2 sm:gap-0">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setIsUploadOpen(false)}
-                        className="rounded-xl"
+                        className="rounded-xl text-xs"
                       >
                         Cancel
                       </Button>
                       <Button
                         type="submit"
-                        disabled={uploadingDoc}
-                        className="rounded-xl gap-2"
+                        disabled={uploadingDoc || extractingFile || (!docContent.trim() && !selectedFile)}
+                        className="rounded-xl gap-2 text-xs"
                       >
                         {uploadingDoc ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Embedding...
+                            Embedding (pgvector)...
                           </>
                         ) : (
-                          "Ingest & Embed"
+                          <>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Ingest & Embed
+                          </>
                         )}
                       </Button>
                     </DialogFooter>
