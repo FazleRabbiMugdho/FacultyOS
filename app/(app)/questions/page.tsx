@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GenerateTab } from "@/components/questions/GenerateTab";
 import { DedupTab } from "@/components/questions/DedupTab";
-import { EmptyState } from "@/components/shell/EmptyState";
+import { RubricsTab } from "@/components/questions/RubricsTab";
 import { FileQuestion, Sparkles, Sliders, ShieldAlert, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,8 +17,8 @@ export default function QuestionsPage() {
       {/* Top Page Header */}
       <PageHeader
         title="Question Authoring & Deduplication"
-        description="Author blueprint-constrained question papers, enforce cognitive balance ratios (Bloom's Taxonomy), and audit papers across triple-layer deduplication."
-        badgeText="Track B Engine"
+        description="Author blueprint-constrained question papers, enforce cognitive balance ratios (Bloom's Taxonomy), audit triple-layer deduplication, and generate ECF analytic rubrics."
+        badgeText="Track B Complete"
         badgeVariant="warning"
         icon={<FileQuestion className="h-5 w-5" />}
       />
@@ -56,7 +56,7 @@ export default function QuestionsPage() {
 
           <Badge variant="glass" className="hidden sm:inline-flex text-xs gap-1.5 py-1">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            ⭐ Skill-Signature Layer Active
+            ⭐ Skill-Signature & ECF Safeguards Active
           </Badge>
         </div>
 
@@ -70,14 +70,9 @@ export default function QuestionsPage() {
           <DedupTab />
         </TabsContent>
 
-        {/* Tab 3: Analytic Rubrics (Track B3 Placeholder) */}
+        {/* Tab 3: Analytic Rubrics with ECF (Track B3) */}
         <TabsContent value="rubrics" className="mt-0 focus-visible:outline-none">
-          <EmptyState
-            icon={<ListChecks className="h-7 w-7 text-emerald-500" />}
-            title="Analytic Rubric Generator with Error-Carried-Forward (ECF)"
-            description="Track B3 will auto-generate multi-criteria marking rubrics with partial-credit formulas and ECF non-penalty rules for downstream Track C grading."
-            actionLabel="Ready for Track B3 Implementation"
-          />
+          <RubricsTab />
         </TabsContent>
       </Tabs>
     </div>

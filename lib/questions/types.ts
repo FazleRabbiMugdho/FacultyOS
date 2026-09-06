@@ -82,3 +82,46 @@ export interface GenerateQuestionsResponse {
   course_id: string;
   blueprint_id?: string;
 }
+
+// ==============================================================================
+// Analytic Rubric Types & Schemas (Track B3 & C1/C2 Consumer)
+// ==============================================================================
+
+export const RubricCriterionSchema = z.object({
+  id: z.string().default(() => Math.random().toString(36).substring(2, 9)),
+  label: z.string().describe("Descriptive criterion name, e.g. 'State Prior Probability and Likelihood Formula'"),
+  max_marks: z.number().min(0.5).describe("Maximum marks allocated to this criterion"),
+  keywords: z.array(z.string()).describe("Key concepts, equations, terms expected in response"),
+  partial_credit_rule: z.string().describe("Explicit rule for granting partial marks"),
+  ecf_rule: z.string().describe("Error-Carried-Forward non-penalty rule"),
+  guidance: z.string().optional().describe("Examiner instructions or common misconceptions"),
+});
+
+export type RubricCriterion = z.infer<typeof RubricCriterionSchema>;
+
+export const RubricSchema = z.object({
+  id: z.string().optional(),
+  question_id: z.string(),
+  total_marks: z.number().int().min(1),
+  criteria: z.array(RubricCriterionSchema),
+  rationale: z.string().optional().describe("AI explanation of criteria weighting and ECF boundary"),
+  is_published: z.boolean().default(false),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export type Rubric = z.infer<typeof RubricSchema>;
+
+export const GenerateRubricRequestSchema = z.object({
+  question_id: z.string().min(1),
+  text: z.string().optional(),
+  marks: z.number().int().min(1).optional(),
+  bloom_level: BloomLevelEnum.optional(),
+  skill_signature: z.string().optional(),
+  co_code: z.string().optional(),
+  course_id: z.string().optional(),
+  granularity: z.enum(["standard", "detailed", "step_by_step"]).default("detailed"),
+  custom_guidance: z.string().optional(),
+});
+
+export type GenerateRubricRequest = z.infer<typeof GenerateRubricRequestSchema>;
