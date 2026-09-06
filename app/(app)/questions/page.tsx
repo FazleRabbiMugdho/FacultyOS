@@ -4,6 +4,7 @@ import * as React from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GenerateTab } from "@/components/questions/GenerateTab";
+import { DedupTab } from "@/components/questions/DedupTab";
 import { EmptyState } from "@/components/shell/EmptyState";
 import { FileQuestion, Sparkles, Sliders, ShieldAlert, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -64,14 +65,9 @@ export default function QuestionsPage() {
           <GenerateTab />
         </TabsContent>
 
-        {/* Tab 2: Triple-Layer Deduplication (Track B2 Placeholder) */}
+        {/* Tab 2: Triple-Layer Deduplication (Track B2) */}
         <TabsContent value="dedup" className="mt-0 focus-visible:outline-none">
-          <EmptyState
-            icon={<ShieldAlert className="h-7 w-7 text-amber-500" />}
-            title="Triple-Layer Deduplication Engine"
-            description="Track B2 will audit questions across Semantic Cosine, Lexical Jaccard, and Conceptual Skill-Signature comparisons to catch repeats disguised in different wording."
-            actionLabel="Ready for Track B2 Implementation"
-          />
+          <DedupTab />
         </TabsContent>
 
         {/* Tab 3: Analytic Rubrics (Track B3 Placeholder) */}
