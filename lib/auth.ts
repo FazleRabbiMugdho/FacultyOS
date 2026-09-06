@@ -7,7 +7,7 @@ export interface Profile {
   id: string;
   email?: string;
   full_name: string | null;
-  role: "admin" | "senior" | "junior";
+  role: "service_provider" | "admin" | "senior" | "junior";
   account_type: AccountType;
   institution_id?: string | null;
   institution_name?: string | null;
@@ -81,16 +81,17 @@ export async function getProfile(): Promise<Profile | null> {
   }
 
   // Determine Persona & University Tenancy
-  if (isSuper || dbProfile?.is_super_admin) {
+  if (isSuper || dbProfile?.is_super_admin || dbProfile?.role === "service_provider") {
     return {
       id: user.id,
       email,
       full_name: dbProfile?.full_name || meta.full_name || "Platform Operator",
-      role: "admin",
+      role: "service_provider",
       account_type: "service_provider",
-      institution_name: "FacultyOS Core Platform (Service Provider)",
+      institution_id: null, // Service providers DO NOT belong to any university
+      institution_name: null,
       institution_domain: "facultyos.io",
-      institution_tier: "enterprise",
+      institution_tier: null,
       is_super_admin: true,
       created_at: dbProfile?.created_at || new Date().toISOString(),
     };

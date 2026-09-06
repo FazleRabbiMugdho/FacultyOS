@@ -22,7 +22,7 @@ import Link from "next/link";
 interface TopBarProps {
   userEmail?: string | null;
   userName?: string | null;
-  userRole?: "admin" | "senior" | "junior";
+  userRole?: "service_provider" | "admin" | "senior" | "junior";
   accountType?: "university_user" | "service_provider";
   institutionName?: string | null;
   institutionTier?: string | null;
@@ -53,9 +53,10 @@ export function TopBar({
     }
   };
 
-  const isProvider = accountType === "service_provider" || isSuperAdmin;
+  const isProvider = accountType === "service_provider" || userRole === "service_provider" || isSuperAdmin;
 
   const roleLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "success" | "warning" | "danger" | "glass" }> = {
+    service_provider: { label: "Platform Operator (Vendor)", variant: "glass" },
     junior: { label: "Junior Faculty (E1)", variant: "secondary" },
     senior: { label: "Senior Faculty (E2/E3)", variant: "default" },
     admin: { label: "Department Chair", variant: "warning" },

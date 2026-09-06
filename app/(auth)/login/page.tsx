@@ -115,7 +115,7 @@ export default function LoginPage() {
           options: {
             data: {
               full_name: isProvider ? "Platform Operator" : "Dr. Eleanor Vance",
-              role: isProvider ? "admin" : "senior",
+              role: isProvider ? "service_provider" : "senior",
               account_type: isProvider ? "service_provider" : "university_user",
               is_super_admin: isProvider,
             },

@@ -27,7 +27,11 @@ create table if not exists public.institution_domains (
   created_at timestamptz default now()
 );
 
--- 3. Enhance profiles with institution link & super-admin flag
+-- 3. Enhance profiles with service provider role, institution link & super-admin flag
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('service_provider', 'admin', 'senior', 'junior'));
+
 alter table public.profiles
   add column if not exists institution_id uuid references public.institutions(id) on delete set null,
   add column if not exists is_super_admin boolean default false;
