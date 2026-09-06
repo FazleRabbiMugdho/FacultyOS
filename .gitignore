@@ -19,7 +19,6 @@
 
 # Markdown Prompts / Draft Specs
 IAPEA_BUILD_PROMPTS.md
-DEMO_SCRIPT.md
 
 # Local env files
 .env*.local

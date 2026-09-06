@@ -22,16 +22,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2, Tag, Loader2, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Tag, Loader2, Sparkles, Activity, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 interface OutcomeCardProps {
   outcome: CourseOutcome;
+  performance?: {
+    avg_score: number;
+    question_count: number;
+    flag: "ok" | "review_teaching" | "review_mapping";
+    diagnosis: string;
+    evidence: Array<{ question_id: string; question: string; percent: number }>;
+  };
   onUpdate: (updated: CourseOutcome) => void;
   onDelete: (id: string) => void;
 }
 
-export function OutcomeCard({ outcome, onUpdate, onDelete }: OutcomeCardProps) {
+export function OutcomeCard({ outcome, performance, onUpdate, onDelete }: OutcomeCardProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -155,6 +163,21 @@ export function OutcomeCard({ outcome, onUpdate, onDelete }: OutcomeCardProps) {
           <p className="text-sm font-medium text-foreground leading-relaxed pt-1">
             {outcome.statement}
           </p>
+
+          {performance && (
+            <div className={`rounded-xl border p-3 text-xs ${performance.flag === "ok" ? "border-emerald-500/25 bg-emerald-500/5" : performance.flag === "review_teaching" ? "border-amber-500/25 bg-amber-500/5" : "border-rose-500/25 bg-rose-500/5"}`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 font-semibold"><Activity className="h-3.5 w-3.5" />Performance: {performance.flag.replace("_", " ")}</span>
+                <span className="font-mono tabular-nums">{performance.question_count ? `${performance.avg_score.toFixed(0)}% · n=${performance.question_count}` : "Awaiting evidence"}</span>
+              </div>
+              <p className="mt-1.5 text-muted-foreground">{performance.diagnosis}</p>
+              {performance.evidence[0] && (
+                <Link href={`/grading?question_id=${encodeURIComponent(performance.evidence[0].question_id)}`} className="mt-2 inline-flex items-center gap-1 font-medium text-primary hover:underline">
+                  Review supporting question <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
+          )}
 
           {/* Action Verbs Tags */}
           {outcome.action_verbs && outcome.action_verbs.length > 0 && (

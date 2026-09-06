@@ -23,8 +23,35 @@ import {
   Cpu,
 } from "lucide-react";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { createClient } from "@/lib/supabase/server";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = createClient();
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, code, title")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let designComplete = false;
+  let authorComplete = false;
+  let gradeComplete = false;
+  if (course) {
+    const [outcomes, blueprints, questions, rubrics, scripts, grades] = await Promise.all([
+      supabase.from("course_outcomes").select("id", { count: "exact", head: true }).eq("course_id", course.id),
+      supabase.from("blueprints").select("id", { count: "exact", head: true }).eq("course_id", course.id),
+      supabase.from("questions").select("id", { count: "exact", head: true }).eq("course_id", course.id),
+      supabase.from("rubrics").select("id, questions!inner(course_id)", { count: "exact", head: true }).eq("questions.course_id", course.id),
+      supabase.from("exam_scripts").select("id", { count: "exact", head: true }).eq("course_id", course.id),
+      supabase.from("grades").select("id, exam_scripts!inner(course_id)", { count: "exact", head: true }).eq("exam_scripts.course_id", course.id),
+    ]);
+    designComplete = Boolean(outcomes.count && blueprints.count);
+    authorComplete = Boolean(questions.count && rubrics.count);
+    gradeComplete = Boolean(scripts.count && grades.count);
+  }
+
+  const progress = [designComplete, authorComplete, gradeComplete];
   const lifecycleStages = [
     {
       id: "track-a",
@@ -44,6 +71,7 @@ export default function DashboardPage() {
         "Outcome-Drift topic reweighting",
       ],
       cta: "Launch Course Design",
+      complete: designComplete,
     },
     {
       id: "track-b",
@@ -63,6 +91,7 @@ export default function DashboardPage() {
         "Analytic rubrics with ECF (Error-Carried-Forward)",
       ],
       cta: "Launch Question Authoring",
+      complete: authorComplete,
     },
     {
       id: "track-c",
@@ -82,6 +111,7 @@ export default function DashboardPage() {
         "Cohen's Kappa & Examiner bias calibration",
       ],
       cta: "Launch Grading & Fairness",
+      complete: gradeComplete,
     },
   ];
 
@@ -91,7 +121,7 @@ export default function DashboardPage() {
       <PageHeader
         title="Faculty Academic Lifecycle"
         description="IAPEA end-to-end co-pilot: Design outcome-aligned curriculum, author balanced and deduped exams, and grade student scripts with verifiable fairness."
-        badgeText="Wave 0 Foundation Active"
+        badgeText="Integrated Lifecycle Active"
         badgeVariant="success"
         icon={<Brain className="h-5 w-5" />}
         actions={
@@ -105,6 +135,28 @@ export default function DashboardPage() {
           </div>
         }
       />
+
+      <section className="border-y border-border/60 py-5" aria-label="Lifecycle progress">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">{course ? `${course.code}: ${course.title}` : "No active course yet"}</p>
+            <p className="text-xs text-muted-foreground">{progress.filter(Boolean).length} of 3 lifecycle stages complete</p>
+          </div>
+          <div className="flex min-w-0 flex-1 items-center sm:max-w-xl">
+            {lifecycleStages.map((stage, index) => (
+              <React.Fragment key={stage.id}>
+                <Link href={stage.href} className="flex min-w-0 flex-col items-center gap-1 text-center">
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold ${stage.complete ? "border-emerald-500 bg-emerald-500 text-white" : "border-border bg-background text-muted-foreground"}`}>
+                    {stage.complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                  </span>
+                  <span className="max-w-24 truncate text-[11px] text-muted-foreground">{stage.subtitle.split(" — ")[0]}</span>
+                </Link>
+                {index < lifecycleStages.length - 1 && <span className={`mb-5 h-0.5 flex-1 ${stage.complete ? "bg-emerald-500" : "bg-border"}`} />}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Hero Banner with Soft Depth */}
       <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card/50 to-indigo-500/5 p-8 backdrop-blur-xl shadow-xl">
@@ -156,7 +208,7 @@ export default function DashboardPage() {
                     <stage.icon className="h-6 w-6" />
                   </div>
                   <Badge variant={stage.badgeVariant} className="text-xs">
-                    {stage.badgeText}
+                    {stage.complete ? "Completed" : stage.badgeText}
                   </Badge>
                 </div>
                 <div>

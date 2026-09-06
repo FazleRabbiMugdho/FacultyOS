@@ -627,7 +627,9 @@ export function BlueprintTab({ course }: BlueprintTabProps) {
 
             {topics.length > 0 && (
               <Button asChild size="sm" className="rounded-xl text-xs gap-1.5 shadow-sm">
-                <Link href="/questions">
+                <Link
+                  href={`/questions?course_id=${encodeURIComponent(course.id)}&blueprint_id=${encodeURIComponent(blueprint?.id || topics[0]?.blueprint_id || "")}`}
+                >
                   Generate Questions with this Blueprint
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>

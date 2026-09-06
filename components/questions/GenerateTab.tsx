@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import {
   QuestionItem,
   GenerateQuestionsResponse,
@@ -40,6 +41,8 @@ import {
 import { toast } from "sonner";
 
 export function GenerateTab() {
+  const searchParams = useSearchParams();
+  const [courses, setCourses] = React.useState<MockCourse[]>(MOCK_COURSES);
   const [selectedCourseId, setSelectedCourseId] = React.useState<string>(MOCK_COURSES[0].id);
   const [selectedBlueprintId, setSelectedBlueprintId] = React.useState<string>(MOCK_COURSES[0].blueprints[0].id);
   const [totalMarks, setTotalMarks] = React.useState<number>(50);
@@ -54,7 +57,51 @@ export function GenerateTab() {
   const [paperRationale, setPaperRationale] = React.useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState<boolean>(false);
 
-  const currentCourse = MOCK_COURSES.find((c) => c.id === selectedCourseId) || MOCK_COURSES[0];
+  React.useEffect(() => {
+    const courseId = searchParams.get("course_id");
+    const blueprintId = searchParams.get("blueprint_id");
+    if (!courseId) return;
+    const localCourse = MOCK_COURSES.find((item) => item.id === courseId);
+    if (localCourse) {
+      setSelectedCourseId(courseId);
+      if (blueprintId) setSelectedBlueprintId(blueprintId);
+      return;
+    }
+    const requestedCourseId = courseId;
+
+    async function hydrateHandoff() {
+      try {
+        const [coursesResponse, outcomesResponse, blueprintResponse] = await Promise.all([
+          fetch("/api/design/courses"),
+          fetch(`/api/design/outcomes?course_id=${requestedCourseId}`),
+          fetch(`/api/design/blueprint?course_id=${requestedCourseId}`),
+        ]);
+        const coursesData = await coursesResponse.json();
+        const outcomesData = await outcomesResponse.json();
+        const blueprintData = await blueprintResponse.json();
+        const course = (coursesData.courses || []).find((item: any) => item.id === requestedCourseId);
+        if (!course) return;
+        const hydrated: MockCourse = {
+          ...course,
+          outcomes: outcomesData.outcomes || [],
+          blueprints: blueprintData.blueprint ? [{
+            ...blueprintData.blueprint,
+            id: blueprintId || blueprintData.blueprint.id,
+            topics: blueprintData.topics || [],
+          }] : [],
+        };
+        if (!hydrated.blueprints.length) return;
+        setCourses((current) => [hydrated, ...current.filter((item) => item.id !== requestedCourseId)]);
+        setSelectedCourseId(requestedCourseId);
+        setSelectedBlueprintId(hydrated.blueprints[0].id);
+      } catch {
+        toast.error("Could not load the handed-off Track A blueprint");
+      }
+    }
+    void hydrateHandoff();
+  }, [searchParams]);
+
+  const currentCourse = courses.find((c) => c.id === selectedCourseId) || courses[0];
   const currentBlueprint = currentCourse.blueprints.find((b) => b.id === selectedBlueprintId) || currentCourse.blueprints[0];
 
   // Adjust Lower/Higher ratios synchronously
@@ -241,7 +288,7 @@ export function GenerateTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {MOCK_COURSES.map((c) => (
+                  {courses.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.code}: {c.title}
                     </SelectItem>
