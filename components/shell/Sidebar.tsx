@@ -14,7 +14,6 @@ import {
   CalendarDays,
   Building2,
   Sparkles,
-  ShieldCheck,
   ExternalLink,
   ArrowLeft,
 } from "lucide-react";
@@ -63,22 +62,10 @@ const universityNavItems: NavItem[] = [
 
 const providerNavItems: NavItem[] = [
   {
-    name: "Licensing & Tenancy",
+    name: "Licensing & Domains",
     href: "/admin/licensing",
     icon: Building2,
     description: "Gated university domains, contracts & seat quotas",
-  },
-  {
-    name: "University Tenants",
-    href: "/admin/licensing#tenants",
-    icon: ShieldCheck,
-    description: "Active institutions, plan tiers & license status",
-  },
-  {
-    name: "Domain Gate Sandbox",
-    href: "/admin/licensing#sandbox",
-    icon: Sparkles,
-    description: "Test faculty email validation against live domain allowlist",
   },
 ];
 
