@@ -13,7 +13,7 @@ export interface Institution {
   license_end: string;
   billing_contact: string;
   annual_contract_value: number;
-  domains: string[]; // e.g. ["ause.edu"]
+  domains: string[]; // e.g. ["aust.edu"]
   created_at: string;
 }
 

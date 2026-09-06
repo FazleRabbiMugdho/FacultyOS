@@ -117,7 +117,7 @@ export async function getProfile(): Promise<Profile | null> {
 
   // Default campus fallback if testing without explicit domain
   if (!instName) {
-    instName = "American University of Science & Engineering";
+    instName = "Ahsanullah University of Science and Technology";
     instTier = "enterprise";
   }
 
@@ -127,9 +127,9 @@ export async function getProfile(): Promise<Profile | null> {
     full_name: dbProfile?.full_name || meta.full_name || "Faculty Member",
     role: (dbProfile?.role || meta.role || "senior") as "admin" | "senior" | "junior",
     account_type: "university_user",
-    institution_id: dbProfile?.institution_id || "inst-ause-001",
+    institution_id: dbProfile?.institution_id || "inst-aust-001",
     institution_name: instName,
-    institution_domain: domain || "ause.edu",
+    institution_domain: domain || "aust.edu",
     institution_tier: instTier || "enterprise",
     is_super_admin: false,
     created_at: dbProfile?.created_at || new Date().toISOString(),

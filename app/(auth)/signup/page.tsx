@@ -31,6 +31,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { BrandLogo } from "@/components/shell/BrandLogo";
+import { ThemeToggle } from "@/components/shell/ThemeToggle";
 
 /* ─── Helpers ────────────────────────────────────────────────── */
 function formatActiveSince(dateStr?: string): string {
@@ -193,6 +194,11 @@ export default function SignupPage() {
           background: linear-gradient(to bottom, #6366f1, #4f46e5 40%, transparent);
         }
       `}</style>
+
+      {/* Top Floating Theme Switcher */}
+      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-50 flex items-center gap-2">
+        <ThemeToggle variant="button" className="shadow-lg shadow-black/5" />
+      </div>
 
       <div className="min-h-screen flex bg-white dark:bg-[#0d0d10]">
 

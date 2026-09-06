@@ -18,17 +18,17 @@ export default async function AppLayout({
       <Sidebar
         accountType={profile?.account_type || "university_user"}
         isSuperAdmin={profile?.is_super_admin || false}
-        institutionName={profile?.institution_name || "American University of Science & Engineering"}
+        institutionName={profile?.institution_name || "Ahsanullah University of Science and Technology"}
       />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-x-hidden">
         <TopBar
-          userEmail={user?.email || (profile?.account_type === "service_provider" ? "admin@facultyos.io" : "faculty@ause.edu")}
+          userEmail={user?.email || (profile?.account_type === "service_provider" ? "admin@facultyos.io" : "faculty@aust.edu")}
           userName={profile?.full_name || (profile?.account_type === "service_provider" ? "Platform Operator" : "Faculty Member")}
           userRole={profile?.role || "senior"}
           accountType={profile?.account_type || "university_user"}
-          institutionName={profile?.institution_name || "American University of Science & Engineering"}
+          institutionName={profile?.institution_name || "Ahsanullah University of Science and Technology"}
           institutionTier={profile?.institution_tier || "Enterprise"}
           isSuperAdmin={profile?.is_super_admin || false}
         />

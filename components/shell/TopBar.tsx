@@ -30,11 +30,11 @@ interface TopBarProps {
 }
 
 export function TopBar({
-  userEmail = "faculty@ause.edu",
+  userEmail = "faculty@aust.edu",
   userName = "Dr. Eleanor Vance",
   userRole = "senior",
   accountType = "university_user",
-  institutionName = "American University of Science & Engineering",
+  institutionName = "Ahsanullah University of Science and Technology",
   institutionTier = "Enterprise",
   isSuperAdmin = false,
 }: TopBarProps) {
@@ -85,7 +85,7 @@ export function TopBar({
             <div className="flex items-center gap-1.5 font-semibold text-foreground">
               <Building2 className="h-3.5 w-3.5 text-indigo-400" />
               <span className="truncate max-w-[260px] sm:max-w-[340px]">
-                {institutionName || "American University of Science & Engineering"}
+                {institutionName || "Ahsanullah University of Science and Technology"}
               </span>
             </div>
             <span>/</span>

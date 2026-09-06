@@ -5,22 +5,22 @@ import {
   CreateInstitutionInput,
 } from "./types";
 
-// Resilient in-memory fallback store initialized with AUSE, MIT, Stanford
+// Resilient in-memory fallback store initialized with AUST, MIT, Stanford
 // Ensures immediate functionality during demos and local testing
 const DEMO_INSTITUTIONS: Institution[] = [
   {
-    id: "inst-ause-001",
-    name: "American University of Science & Engineering",
-    slug: "ause",
+    id: "inst-aust-001",
+    name: "Ahsanullah University of Science and Technology",
+    slug: "aust",
     tier: "enterprise",
     status: "active",
     max_seats: 150,
     enrolled_seats: 42,
     active_from: "2024-01-10T00:00:00.000Z",
     license_end: "2027-01-10T00:00:00.000Z",
-    billing_contact: "provost@ause.edu",
+    billing_contact: "provost@aust.edu",
     annual_contract_value: 48000,
-    domains: ["ause.edu"],
+    domains: ["aust.edu"],
     created_at: "2024-01-10T00:00:00.000Z",
   },
   {

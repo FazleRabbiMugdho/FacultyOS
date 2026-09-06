@@ -72,17 +72,17 @@ create policy "Super admins can manage institution domains"
     )
   );
 
--- 5. Seed default licensed institutions (AUSE, MIT, Stanford)
+-- 5. Seed default licensed institutions (AUST, MIT, Stanford)
 insert into public.institutions (name, slug, tier, status, max_seats, active_from, license_end, billing_contact, annual_contract_value)
 values
-  ('American University of Science & Engineering', 'ause', 'enterprise', 'active', 150, '2024-01-10T00:00:00Z', '2027-01-10T00:00:00Z', 'provost@ause.edu', 48000),
+  ('Ahsanullah University of Science and Technology', 'aust', 'enterprise', 'active', 150, '2024-01-10T00:00:00Z', '2027-01-10T00:00:00Z', 'provost@aust.edu', 48000),
   ('Massachusetts Institute of Technology', 'mit', 'enterprise', 'active', 300, '2023-09-01T00:00:00Z', '2026-09-01T00:00:00Z', 'academic-it@mit.edu', 72000),
   ('Stanford University', 'stanford', 'enterprise', 'active', 200, '2024-03-15T00:00:00Z', '2026-03-15T00:00:00Z', 'dean-eng@stanford.edu', 60000)
 on conflict (slug) do nothing;
 
 -- Link default domains
 insert into public.institution_domains (institution_id, domain, is_active)
-select id, 'ause.edu', true from public.institutions where slug = 'ause'
+select id, 'aust.edu', true from public.institutions where slug = 'aust'
 on conflict (domain) do nothing;
 
 insert into public.institution_domains (institution_id, domain, is_active)

@@ -16,18 +16,31 @@ import {
   CalendarDays,
   Building2,
   Sparkles,
+  ShieldCheck,
+  DollarSign,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/shell/BrandLogo";
 
-const navigationItems = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  track: string;
+  trackBadge: string | null;
+  description: string;
+}
+
+const universityNavItems: NavItem[] = [
   {
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     track: "Overview",
     trackBadge: null,
+    description: "Academic lifecycle, accreditation status & quick actions",
   },
   {
     name: "Course Design",
@@ -61,13 +74,40 @@ const navigationItems = [
     trackBadge: "Conflict-Safe",
     description: "Weekly instructor, room & cohort scheduling",
   },
+];
+
+const providerNavItems: NavItem[] = [
   {
-    name: "Licensing & Domains",
+    name: "Licensing & Tenancy",
     href: "/admin/licensing",
     icon: Building2,
     track: "Provider",
     trackBadge: "Monetization",
     description: "Gated university domains, contracts & seat quotas",
+  },
+  {
+    name: "University Tenants",
+    href: "/admin/licensing#tenants",
+    icon: ShieldCheck,
+    track: "Provider",
+    trackBadge: "Tenancy",
+    description: "Active institutions, plan tiers & license status",
+  },
+  {
+    name: "ARR & Seat Quotas",
+    href: "/admin/licensing#analytics",
+    icon: DollarSign,
+    track: "Provider",
+    trackBadge: "Revenue",
+    description: "Contract values, seat capacity & recurring licenses",
+  },
+  {
+    name: "AI Gateway Health",
+    href: "/admin/licensing#gateway",
+    icon: Sparkles,
+    track: "Provider",
+    trackBadge: "Operational",
+    description: "Gemini 1.5 Pro, OpenRouter VLM routing & latency",
   },
 ];
 
@@ -80,18 +120,13 @@ interface SidebarProps {
 export function Sidebar({
   accountType = "university_user",
   isSuperAdmin = false,
-  institutionName = "American University of Science & Engineering",
+  institutionName = "Ahsanullah University of Science and Technology",
 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
 
-  // Filter items: Provider console is only visible to Service Providers / Developers
-  const visibleItems = navigationItems.filter((item) => {
-    if (item.track === "Provider") {
-      return isSuperAdmin || accountType === "service_provider";
-    }
-    return true;
-  });
+  const isProvider = isSuperAdmin || accountType === "service_provider";
+  const visibleItems = isProvider ? providerNavItems : universityNavItems;
 
   return (
     <aside
@@ -103,7 +138,7 @@ export function Sidebar({
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-border/60">
         <Link
-          href="/dashboard"
+          href={isProvider ? "/admin/licensing" : "/dashboard"}
           className="group flex items-center gap-3 overflow-hidden press"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
@@ -120,7 +155,7 @@ export function Sidebar({
                 </span>
               </div>
               <span className="text-[11px] text-muted-foreground truncate">
-                {accountType === "service_provider"
+                {isProvider
                   ? "Platform Operator"
                   : "Campus Workspace"}
               </span>
@@ -146,7 +181,7 @@ export function Sidebar({
       {/* Tenant Indicator Pill */}
       {!collapsed && (
         <div className="px-4 pt-3 pb-1">
-          {accountType === "service_provider" ? (
+          {isProvider ? (
             <div className="px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center justify-between text-[11px]">
               <span className="font-semibold text-purple-300 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-purple-400" />
@@ -168,17 +203,17 @@ export function Sidebar({
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5">
         <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-          {!collapsed ? "Academic Lifecycle" : "•••"}
+          {!collapsed ? (isProvider ? "Platform Administration" : "Academic Lifecycle") : "•••"}
         </div>
 
         {visibleItems.map((item, i) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            (item.href !== "/dashboard" && item.href !== "/admin/licensing" && pathname.startsWith(item.href));
 
           return (
             <Link
-              key={item.href}
+              key={item.name}
               href={item.href}
               style={{ animationDelay: `${0.05 + i * 0.06}s` }}
               className={cn(
@@ -204,11 +239,44 @@ export function Sidebar({
                   <div className="flex flex-col truncate">
                     <span className="truncate">{item.name}</span>
                   </div>
+                  {item.trackBadge && (
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground group-hover:text-foreground font-mono">
+                      {item.trackBadge}
+                    </span>
+                  )}
                 </div>
               )}
             </Link>
           );
         })}
+
+        {/* For Service Providers: Optional Campus Simulator link */}
+        {isProvider && (
+          <div className="pt-3 mt-3 border-t border-border/40">
+            <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              {!collapsed ? "Preview & QA" : "•••"}
+            </div>
+            <Link
+              href="/dashboard"
+              className={cn(
+                "reveal-sm press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200",
+                pathname === "/dashboard"
+                  ? "bg-accent text-foreground font-semibold"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              )}
+            >
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+              {!collapsed && (
+                <div className="flex flex-1 items-center justify-between overflow-hidden">
+                  <span className="truncate">Simulate Campus View</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 font-mono">
+                    SIM
+                  </span>
+                </div>
+              )}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Footer / System Status */}

@@ -23,6 +23,7 @@ import {
   Key,
 } from "lucide-react";
 import { BrandLogo } from "@/components/shell/BrandLogo";
+import { ThemeToggle } from "@/components/shell/ThemeToggle";
 
 /* ─── Data ─────────────────────────────────────────────────────── */
 const FEATURES = [
@@ -47,21 +48,21 @@ const CAMPUS_ROLES = [
   {
     label: "Junior Faculty",
     role: "Examiner · E1",
-    email: "junior@ause.edu",
+    email: "junior@aust.edu",
     accent: "#3b82f6",
     dotClass: "bg-blue-500",
   },
   {
     label: "Senior Faculty",
     role: "Arbitrator · E2/E3",
-    email: "senior@ause.edu",
+    email: "senior@aust.edu",
     accent: "#f59e0b",
     dotClass: "bg-amber-500",
   },
   {
     label: "Dept. Chair",
     role: "Academic Lead",
-    email: "chair@ause.edu",
+    email: "chair@aust.edu",
     accent: "#8b5cf6",
     dotClass: "bg-violet-500",
   },
@@ -177,6 +178,11 @@ export default function LoginPage() {
           background: linear-gradient(to bottom, #6366f1, #4f46e5 40%, transparent);
         }
       `}</style>
+
+      {/* Top Floating Theme Switcher */}
+      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-50 flex items-center gap-2">
+        <ThemeToggle variant="button" className="shadow-lg shadow-black/5" />
+      </div>
 
       <div className="min-h-screen flex bg-white dark:bg-[#0d0d10]">
 
@@ -391,7 +397,7 @@ export default function LoginPage() {
               <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-snug">
                 {portalPersona === "provider"
                   ? "Master operator console for university licensing, domain gating, and monetization."
-                  : "Sign in with your authorized institutional email (e.g. @ause.edu)."}
+                  : "Sign in with your authorized institutional email (e.g. @aust.edu)."}
               </p>
             </div>
 
