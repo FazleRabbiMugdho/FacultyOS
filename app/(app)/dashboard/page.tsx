@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   TrendingUp,
   Cpu,
+  CalendarDays,
 } from "lucide-react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { createClient } from "@/lib/supabase/server";
@@ -135,6 +136,14 @@ export default async function DashboardPage() {
           </div>
         }
       />
+
+      <section className="flex flex-col gap-4 border-y border-border/60 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" /></span>
+          <div><p className="text-sm font-semibold">Conflict-safe course routine</p><p className="text-xs text-muted-foreground">Assign weekly sessions only when the instructor, room, and cohort are all available.</p></div>
+        </div>
+        <Button asChild variant="outline"><Link href="/routine">Open Routine <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+      </section>
 
       <section className="border-y border-border/60 py-5" aria-label="Lifecycle progress">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

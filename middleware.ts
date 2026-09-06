@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/design") ||
     request.nextUrl.pathname.startsWith("/questions") ||
-    request.nextUrl.pathname.startsWith("/grading");
+    request.nextUrl.pathname.startsWith("/grading") ||
+    request.nextUrl.pathname.startsWith("/routine");
 
   if (!user && isAppRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
