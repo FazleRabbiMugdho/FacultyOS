@@ -41,15 +41,18 @@ alter table public.institutions enable row level security;
 alter table public.institution_domains enable row level security;
 
 -- Read policies: authenticated users and anon can check domains for validation
+drop policy if exists "Allow read access to active institution domains" on public.institution_domains;
 create policy "Allow read access to active institution domains"
   on public.institution_domains for select
   using (is_active = true);
 
+drop policy if exists "Allow read access to active institutions" on public.institutions;
 create policy "Allow read access to active institutions"
   on public.institutions for select
   using (status in ('active', 'trial'));
 
 -- Super-admin write policies
+drop policy if exists "Super admins can manage institutions" on public.institutions;
 create policy "Super admins can manage institutions"
   on public.institutions for all
   using (
@@ -59,6 +62,7 @@ create policy "Super admins can manage institutions"
     )
   );
 
+drop policy if exists "Super admins can manage institution domains" on public.institution_domains;
 create policy "Super admins can manage institution domains"
   on public.institution_domains for all
   using (
