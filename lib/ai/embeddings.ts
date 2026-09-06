@@ -2,12 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { withCache } from "./cache";
 
 function getGeminiClient(): GoogleGenerativeAI {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  let apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey || apiKey === "mock-gemini-key") {
     throw new Error(
       "GOOGLE_GENERATIVE_AI_API_KEY is not configured in .env.local"
     );
   }
+  apiKey = apiKey.replace(/^Gemini key:\s*/i, "").trim();
   return new GoogleGenerativeAI(apiKey);
 }
 
