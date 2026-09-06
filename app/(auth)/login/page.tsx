@@ -30,10 +30,30 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      let { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+
+      // If invalid credentials on a demo email, auto-create and sign in
+      if (error && email.endsWith("@facultyos.edu")) {
+        const role = email.split("@")[0] as "junior" | "senior" | "admin";
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: `${role.charAt(0).toUpperCase() + role.slice(1)} Faculty`,
+              role: role || "junior",
+            },
+          },
+        });
+
+        if (!signUpError) {
+          const res = await supabase.auth.signInWithPassword({ email, password });
+          error = res.error;
+        }
+      }
 
       if (error) {
         toast.error(error.message || "Failed to sign in");
