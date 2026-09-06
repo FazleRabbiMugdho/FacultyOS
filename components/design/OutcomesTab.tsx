@@ -138,7 +138,9 @@ export function OutcomesTab({ course }: OutcomesTabProps) {
       toast.success(
         `Successfully generated and saved ${data.count || data.outcomes.length} Course Outcomes with Bloom alignment!`,
         {
-          description: "Measurable OBE competencies are now active.",
+          description: data.source === "fallback"
+            ? "Offline fallback used because Gemini was unavailable. Results remain editable."
+            : "Measurable OBE competencies are now active.",
         }
       );
     } catch (err: any) {
@@ -423,7 +425,7 @@ export function OutcomesTab({ course }: OutcomesTabProps) {
               </h3>
               {outcomes.length > 0 && (
                 <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  ✨ AI Generated · 94% Confidence
+                  Generated · Schema Validated
                 </span>
               )}
             </div>
